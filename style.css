@@ -143,24 +143,48 @@ img, video { display: block; max-width: 100%; }
 
 /* Omitir intro: aparece durante el descenso, salta directo a la
    fachada clicable sin esperar a que el vídeo termine. */
+/* Discreto y del mismo material que el resto de la interfaz (cristal
+   difuminado, esquina redonda, sin borde duro): está para quien lo
+   necesite, no para competir con el vídeo. */
 .btn-skip-intro {
   position: absolute;
-  top: clamp(1.2rem, 4vw, 2.2rem);
-  right: clamp(1.2rem, 4vw, 2.2rem);
+  top: clamp(1rem, 3.5vw, 2rem);
+  right: clamp(1rem, 3.5vw, 2rem);
   z-index: 3;
-  padding: 0.7em 1.3em;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  color: var(--white);
-  background: rgba(0,0,0,0.28);
-  border: 1px solid rgba(255,255,255,0.5);
-  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.6em 1.1em;
+  font-family: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+  background: rgba(18, 17, 14, 0.42);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
   cursor: pointer;
   opacity: 0;
-  animation: skip-fade-in .6s var(--ease) .6s forwards;
-  transition: background .3s var(--ease), opacity .3s var(--ease);
+  animation: skip-fade-in .8s var(--ease) 1.2s forwards;
+  transition: background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
 }
-.btn-skip-intro:hover { background: rgba(0,0,0,0.5); }
+.btn-skip-intro::after {
+  content: '';
+  width: 11px;
+  height: 11px;
+  flex: none;
+  background: currentColor;
+  /* dos triángulos hacia la derecha, como el avance rápido */
+  clip-path: polygon(0 0, 48% 50%, 0 100%, 52% 0, 100% 50%, 52% 100%);
+}
+.btn-skip-intro:hover {
+  background: rgba(18, 17, 14, 0.66);
+  color: #fff;
+  border-color: rgba(255,255,255,0.34);
+}
+.btn-skip-intro:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 @keyframes skip-fade-in { to { opacity: 1; } }
 
 /* =============================================================
@@ -1494,19 +1518,22 @@ img, video { display: block; max-width: 100%; }
   right: clamp(1.3rem, 3vw, 1.8rem);
   z-index: 92;
   pointer-events: auto;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 20px;
-  font-size: 0.68rem;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.92);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.75);
+  color: var(--ink);
   text-shadow: none;
   cursor: pointer;
-  padding: 0.5em 1em;
-  transition: color .2s var(--ease), border-color .2s var(--ease);
+  padding: 0.65em 1.2em;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+  transition: background .2s var(--ease), transform .2s var(--ease);
 }
-.tutorial-skip:hover { color: var(--white); border-color: rgba(255,255,255,0.5); }
+.tutorial-skip:hover { background: #fff; transform: translateY(-1px); }
+.tutorial-skip:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .tutorial-card {
   position: fixed;
@@ -1613,12 +1640,17 @@ img, video { display: block; max-width: 100%; }
 .tutorial-btn--primary:hover { filter: brightness(1.08); color: var(--ink); }
 
 .tutorial-confirm {
-  font-size: 0.85rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 0.1rem auto;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
   color: var(--gold);
-  text-align: center;
-  padding: 0.4rem 0;
+  font-size: 1rem;
+  line-height: 1;
   animation: tutorialConfirmPop .35s var(--ease);
 }
 @keyframes tutorialConfirmPop {
@@ -1674,4 +1706,58 @@ img, video { display: block; max-width: 100%; }
   .top-actions { top: 1rem; right: 1rem; gap: 0.5rem; }
 
   .tutorial-skip { top: 3.1rem; right: 0.9rem; }
+}
+
+/* =============================================================
+   PANTALLA BAJA — el móvil en horizontal, que es como se usa esta
+   web (hay puerta de rotación). Ahí sobran ~390px de alto y la
+   consulta de 720px de ancho NO se aplica: sin esto, el menú
+   lateral no cabe y los paneles se comen la pantalla.
+   ============================================================= */
+@media (max-height: 540px) {
+  .app-sidebar {
+    top: 50%;
+    max-height: calc(100dvh - 1.6rem);
+    overflow-y: auto;
+    padding: 0.35rem 0;
+    scrollbar-width: none;
+  }
+  .app-sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-item { padding: 0.42rem 0; }
+  .sidebar-icon svg { width: 15px; height: 15px; }
+  .sidebar-toggle { padding: 0.45rem 0; }
+  .sidebar-footer, .sidebar-restart-tutorial { display: none; }
+
+  .context-panel { padding: 0.8rem 1rem 0.9rem; max-width: min(330px, 74vw); }
+  .ctx-price { font-size: 1.15rem; margin-bottom: 0.6rem; }
+  .ctx-summary, .ctx-specs { margin-bottom: 0.5rem; }
+  .ctx-btn { padding: 0.45em 0.85em; font-size: 0.68rem; }
+
+  .tutorial-card { padding: 0.9rem 1.05rem 1rem; width: min(270px, 80vw); }
+  .tutorial-text { font-size: 0.8rem; margin-bottom: 0.7rem; }
+  .tutorial-hint { padding: 0.5rem 0.7rem; margin-bottom: 0.7rem; }
+  .tutorial-hint li { font-size: 0.7rem; }
+
+  .side-drawer { padding: 1.2rem 1.3rem; }
+  .drawer-title { font-size: 1.25rem; margin-top: 0.4rem; }
+  .floor-selector-title { display: none; }
+
+  /* Con la pantalla tan baja el menú lateral ocupa todo el alto, así
+     que lo que va abajo a la izquierda tiene que apartarse de él. */
+  .explore-hint { bottom: 3.5rem; left: 4.4rem; }
+  .view-controls { left: 4.4rem; bottom: 0.7rem; flex-direction: row; }
+}
+
+/* =============================================================
+   TÁCTIL — objetivos más grandes donde no hay ratón. Nada de esto
+   afecta al escritorio.
+   ============================================================= */
+@media (pointer: coarse) {
+  .view-btn { width: 38px; height: 38px; font-size: 0.95rem; }
+  .floor-item { width: 36px; height: 32px; font-size: 0.68rem; }
+  .sidebar-item { padding: 0.6rem 0; }
+  .ctx-btn, .top-action-btn, .compare-indicator { padding: 0.6em 1em; }
+  /* El tooltip de las flechas del edificio no sirve en táctil (no hay
+     hover): se muestra al tocar, que es cuando el dedo ya está encima. */
+  .unit-slice .slice-label { transition: opacity .15s var(--ease); }
 }

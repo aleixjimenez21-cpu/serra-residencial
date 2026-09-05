@@ -47,30 +47,25 @@ window.SERRA_TUTORIAL = {
 // edificio) y muestran "Continuar" tras confirmarla; el resto pide
 // pulsar "Entendido" (`advance: 'manual'`) o sus propios botones.
 // -----------------------------------------------------------------
+// Tres pasos, no ocho: enseñar lo justo para que el edificio deje de
+// ser una foto y el resto se descubra solo. Los pasos de acción avanzan
+// en cuanto el usuario hace lo que se le pide -- no se le pide además
+// que pulse "Continuar" para algo que acaba de hacer.
 const TUTORIAL_STEPS = [
   {
-    id: 'hover-floor',
-    title: 'EXPLORA EL EDIFICIO',
-    text: 'Pasa el cursor sobre una planta para descubrir sus viviendas.',
-    getTarget: () => document.querySelector('.planta-zone[data-planta="p2"]'),
-    event: 'serra:floor-hover',
-    skipOnMobile: true, // no hay hover táctil -- se fusiona con el paso siguiente
-    position: 'right',
-  },
-  {
     id: 'select-floor',
-    title: 'SELECCIONA UNA PLANTA',
-    text: 'Haz clic para explorar sus viviendas.',
-    mobileText: 'Toca una planta para explorar sus viviendas.',
+    title: 'EXPLORA EL EDIFICIO',
+    text: 'Haz clic en cualquier planta.',
+    mobileText: 'Toca cualquier planta.',
     getTarget: () => document.querySelector('.planta-zone[data-planta="p2"]'),
     event: 'serra:floor-select',
     position: 'right',
-    postDelay: 450, // deja terminar el "pop out" antes de avanzar
+    postDelay: 400, // deja terminar el "pop out" antes de avanzar
   },
   {
-    id: 'hover-unit',
+    id: 'pick-unit',
     title: 'ELIGE UNA VIVIENDA',
-    text: 'Cada vivienda muestra distribución, superficie, precio y disponibilidad.',
+    text: 'Superficie, precio y disponibilidad de cada una.',
     mobileText: 'Toca una vivienda para ver sus datos.',
     getTarget: () => document.querySelector('.planta-zone.popped .unit-slice:not(.unit-slice--entrada)'),
     event: 'serra:unit-hover',
@@ -78,50 +73,15 @@ const TUTORIAL_STEPS = [
     position: 'right',
   },
   {
-    id: 'context-panel',
-    title: 'INFORMACIÓN EN TIEMPO REAL',
-    text: 'Aquí aparece todo lo que estés explorando.',
-    getTarget: () => document.querySelector('[data-tutorial="property-info"]'),
-    advance: 'manual',
-    position: 'top',
-  },
-  {
-    id: 'view-controls',
-    title: 'CONTROLA LA VISTA',
-    text: 'Aléjate, acércate, centra el edificio o pásalo a pantalla completa.',
-    getTarget: () => document.querySelector('[data-tutorial="viewer-controls"]'),
-    advance: 'manual',
-    position: 'top',
-  },
-  {
-    id: 'sidebar',
-    title: 'TODO DESDE AQUÍ',
-    text: 'Viviendas, planos, comparador, promoción, financiación y más.',
+    id: 'menu',
+    title: 'TODO LO DEMÁS, AQUÍ',
+    text: 'Desde el menú lateral llegas al resto de la promoción.',
+    hint: ['Listado y comparador de viviendas', 'Planos, calidades y financiación', 'Asistente para resolver dudas'],
     getTarget: () => document.querySelector('[data-tutorial="sidebar"]'),
     advance: 'manual',
     position: 'right',
     onEnter: () => appSidebar.classList.add('expanded'),
     onExit: () => appSidebar.classList.remove('expanded'),
-  },
-  {
-    id: 'comparator',
-    title: 'COMPARA ANTES DE DECIDIR',
-    text: 'Guarda varias viviendas y compáralas lado a lado.',
-    getTarget: () => document.querySelector('[data-tutorial="compare"]'),
-    advance: 'manual',
-    position: 'right',
-  },
-  {
-    id: 'ai',
-    title: 'PREGUNTA A SERRA',
-    text: 'Encuentra vivienda, compara opciones o resuelve dudas al instante.',
-    hint: ['"Viviendas con terraza"', '"¿Cuál tiene más superficie?"', '"Compara dos viviendas"'],
-    getTarget: () => document.querySelector('[data-tutorial="ai"]'),
-    position: 'left',
-    actions: () => [
-      { label: 'Probar asistente', primary: true, onClick: () => { endTutorial(true); if (typeof openAIConcierge === 'function') openAIConcierge(); } },
-      { label: 'Continuar', onClick: () => goToNextStep() },
-    ],
   },
 ];
 
@@ -262,21 +222,16 @@ function tutorialShowStep(step) {
   }
 }
 
-// Feedback breve al completar la acción pedida -- pero el avance a
-// partir de aquí siempre lo decide el usuario, nunca un temporizador:
-// se queda en "✓ Perfecto" con un botón "Continuar" hasta que lo pulsa.
+// Confirmación breve al completar la acción pedida y a seguir. Aquí NO
+// se pide un clic extra: el usuario acaba de hacer lo que se le pedía,
+// obligarle a pulsar "Continuar" encima solo estorba. Los pasos que son
+// solo texto sí esperan a que pulse, para no quitárselo de delante
+// antes de leerlo.
 function showConfirmThenAdvance(delay) {
   if (tutorialEventCleanup) { tutorialEventCleanup(); tutorialEventCleanup = null; }
   tutorialConfirmDelayId = setTimeout(() => {
-    renderCard(`
-      <div class="tutorial-confirm">✓ Perfecto</div>
-      <div class="tutorial-actions">
-        <button type="button" class="tutorial-btn tutorial-btn--primary" data-continue="1">Continuar</button>
-      </div>
-    `, { sheet: isMobileDevice() });
-    setTimeout(() => {
-      tutorialCard.querySelector('[data-continue]')?.addEventListener('click', () => goToNextStep());
-    }, 170);
+    renderCard(`<div class="tutorial-confirm">✓</div>`, { sheet: isMobileDevice() });
+    tutorialConfirmDelayId = setTimeout(() => goToNextStep(), 700);
   }, delay);
 }
 

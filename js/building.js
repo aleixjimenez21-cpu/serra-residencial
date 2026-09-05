@@ -284,9 +284,25 @@ if (fachadaImg.complete) {
 }
 
 let resizeRaf = null;
-window.addEventListener('resize', () => {
+function relayoutFachada() {
   if (resizeRaf) cancelAnimationFrame(resizeRaf);
   resizeRaf = requestAnimationFrame(layoutFachada);
+}
+
+// El recorte depende del tamaño REAL del contenedor, así que se observa
+// el contenedor en vez de fiarse del evento 'resize' de la ventana: al
+// girar el móvil ese evento no siempre vuelve a dispararse con las
+// medidas definitivas, y se quedaba aplicado el recorte calculado en
+// vertical (que amplía muchísimo) estando ya en horizontal.
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(relayoutFachada).observe(plantasSection);
+} else {
+  window.addEventListener('resize', relayoutFachada);
+}
+window.addEventListener('orientationchange', () => {
+  // Tras girar, las medidas tardan un poco en asentarse (barra del
+  // navegador incluida): se recalcula varias veces por si acaso.
+  [0, 120, 350, 700].forEach((ms) => setTimeout(relayoutFachada, ms));
 });
 
 // -----------------------------------------------------------------

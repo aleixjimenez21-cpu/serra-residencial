@@ -119,6 +119,8 @@ function buildUI(root, vivienda, zones) {
 
     <div class="sr-room-label" aria-hidden="true"><span></span></div>
 
+    <div class="sr-scrim" hidden></div>
+
     <div class="sr-topbar">
       <button class="sr-btn sr-back" type="button" aria-label="Volver al selector de viviendas">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -176,6 +178,7 @@ function buildUI(root, vivienda, zones) {
     rooms: root.querySelector('.sr-rooms'),
     roomsToggle: root.querySelector('.sr-rooms-toggle'),
     roomsClose: root.querySelector('.sr-rooms-close'),
+    scrim: root.querySelector('.sr-scrim'),
     roomButtons: () => root.querySelectorAll('.sr-room'),
     back: root.querySelector('.sr-back'),
     gyro: root.querySelector('.sr-gyro'),
@@ -383,9 +386,12 @@ export function initShowroom(containerEl, viviendaId) {
   function setRoomsOpen(open) {
     containerEl.classList.toggle('rooms-open', open);
     ui.roomsToggle.setAttribute('aria-expanded', String(open));
+    // El velo solo existe en móvil; fuera de ahí no debe tapar nada.
+    ui.scrim.hidden = !(open && isCompact());
   }
   ui.roomsToggle.addEventListener('click', () => setRoomsOpen(!containerEl.classList.contains('rooms-open')));
   ui.roomsClose.addEventListener('click', () => setRoomsOpen(false));
+  ui.scrim.addEventListener('click', () => setRoomsOpen(false));
   ui.roomButtons().forEach((b) => {
     b.addEventListener('click', () => {
       if (b.dataset.node !== currentNodeId) tour.setCurrentNode(b.dataset.node);
