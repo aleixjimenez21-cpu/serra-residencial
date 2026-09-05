@@ -279,19 +279,22 @@
      escritorio nunca aparece; las imágenes/vídeos son siempre los
      mismos, horizontales, en todos los casos.
      ============================================================ -->
-<div id="rotate-overlay" class="rotate-overlay hidden" role="status">
-  <div class="rotate-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-      <rect x="6.5" y="3" width="11" height="18" rx="2"/>
-      <line x1="10.3" y1="18.2" x2="13.7" y2="18.2" stroke-width="1.6" stroke-linecap="round"/>
-    </svg>
-    <svg class="rotate-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <path d="M19 5a9 9 0 1 1-6.4-2.6" stroke-linecap="round"/>
-      <path d="M19 1.5V6h-4.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+<div id="rotate-overlay" class="rotate-overlay hidden">
+  <div class="rotate-brand">SERRA <span>RESIDENCIAL</span></div>
+  <div class="rotate-content">
+    <div class="rotate-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="6.5" y="3" width="11" height="18" rx="2"/>
+        <line x1="10.3" y1="18.2" x2="13.7" y2="18.2" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <svg class="rotate-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M19 5a9 9 0 1 1-6.4-2.6" stroke-linecap="round"/>
+        <path d="M19 1.5V6h-4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <p class="rotate-text">Para una mejor experiencia,<br>gira tu dispositivo</p>
+    <p class="rotate-hint">Si no gira solo, activa la rotación automática de la pantalla en los ajustes de tu móvil.</p>
   </div>
-  <p class="rotate-text">Gira el móvil para verlo a pantalla completa</p>
-  <button id="rotate-dismiss" class="rotate-dismiss" type="button">Seguir así</button>
 </div>
 
 <!-- Scripts clásicos (no ES modules: el sitio se abre con doble clic,

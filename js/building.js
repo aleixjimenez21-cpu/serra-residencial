@@ -248,26 +248,16 @@ function layoutFachada() {
   const CH = plantasSection.clientHeight;
   if (!CW || !CH) return;
 
-  // En apaisado se recorta a "cover" con el foco en el edificio: llena
-  // la pantalla y sobra imagen por los lados.
-  //
-  // En vertical eso mismo ampliaría tantísimo (para llenar una pantalla
-  // estrecha y alta habría que recortar dos tercios del ancho) que solo
-  // se vería un trozo del edificio. Así que ahí se encaja el ANCHO y se
-  // centra en vertical: el edificio entra entero, con la escena a los
-  // lados de arriba y abajo. Se ve peor que en apaisado -- de ahí el
-  // aviso de girar -- pero se ve el edificio completo y usable.
-  const portrait = CH > CW;
-  const scale = portrait ? (CW / NW) : Math.max(CW / NW, CH / NH);
+  const scale = Math.max(CW / NW, CH / NH); // "cover"
   const RW = NW * scale;
   const RH = NH * scale;
 
-  // Si la imagen no llega a cubrir un eje, se centra en él; si lo
-  // desborda, se recorta con el foco puesto en el edificio.
-  let left = RW <= CW ? (CW - RW) / 2
-    : Math.min(0, Math.max(CW - RW, CW / 2 - FOCUS_X * RW));
-  let top = RH <= CH ? (CH - RH) / 2
-    : Math.min(0, Math.max(CH - RH, CH / 2 - FOCUS_Y * RH));
+  // Centra el foco en el contenedor, luego recorta (clamp) para que
+  // la imagen siga cubriendo el 100% del contenedor sin huecos.
+  let left = CW / 2 - FOCUS_X * RW;
+  let top = CH / 2 - FOCUS_Y * RH;
+  left = Math.min(0, Math.max(CW - RW, left));
+  top = Math.min(0, Math.max(CH - RH, top));
 
   fachadaImg.style.width = RW + 'px';
   fachadaImg.style.height = RH + 'px';

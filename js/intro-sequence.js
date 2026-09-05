@@ -175,57 +175,52 @@ function revealFrenteInteractive() {
 }
 
 // -----------------------------------------------------------------
-// AVISO DE GIRAR EL MÓVIL — sugerencia, no barrera
+// ROTA TU DISPOSITIVO
 // -----------------------------------------------------------------
-// En vertical la web funciona perfectamente: layoutFachada encaja el
-// edificio entero. Simplemente en apaisado se ve a pantalla completa,
-// y eso es lo que sugiere este aviso.
+// Solo en móvil. En PC no aparece nunca (aunque la ventana se deje
+// estrecha y alta): se distingue "móvil" por puntero táctil/sin
+// hover, no solo por el ancho.
 //
-// Solo aparece en móvil (se distingue por puntero táctil/sin hover, no
-// por el ancho: en PC no sale nunca aunque la ventana quede estrecha),
-// solo en vertical, y solo una vez llegados a la vista interactiva --
-// durante la intro y los vídeos no molesta. Se va al girar, al tocar
-// el edificio, al pulsar "Seguir así" o a los 10 segundos.
+// La "puerta" (rotateGateActive) es lo que decide si el aviso puede
+// llegar a mostrarse: solo se arma al terminar el VÍDEO 2 (frente-
+// video) en móvil (armRotationGate). Antes de eso -- durante la intro
+// en bucle, el vídeo vertical, o mientras se leen los popups -- el
+// usuario puede estar perfectamente en vertical sin que salte nada.
+// En cuanto gira a horizontal con la puerta armada, se revela la
+// fachada automáticamente.
 const rotateOverlay = document.getElementById('rotate-overlay');
-const rotateDismiss = document.getElementById('rotate-dismiss');
-let rotateNoticeActive = false;   // ¿estamos ya en la vista interactiva?
-let rotateNoticeDismissed = false; // el usuario ha dicho que sigue en vertical
+let rotateGateActive = false;
+let awaitingRotationReveal = false;
 
 function updateRotateOverlay() {
-  const show = rotateNoticeActive && !rotateNoticeDismissed
-    && isMobileDevice() && isPortrait();
+  const show = rotateGateActive && isMobileDevice() && isPortrait();
   rotateOverlay.classList.toggle('hidden', !show);
 }
 
-// Se llama al terminar (u omitir) el VÍDEO 2 en móvil. Ya NO bloquea:
-// la vista interactiva se revela siempre, en la orientación que sea, y
-// en vertical solo se sugiere girar. Quien prefiera seguir en vertical
-// puede: el edificio se encaja entero (ver layoutFachada).
+// Se llama al terminar (u omitir) el VÍDEO 2 (frente-video) en móvil
+// -- justo antes de la vista interactiva final, que necesita
+// horizontal. Si ya está en horizontal (el usuario giró mientras veía
+// el vídeo), pasa directo sin mostrar nada.
 function armRotationGate() {
-  rotateNoticeActive = true;
-  revealFrenteInteractive();
+  rotateGateActive = true;
   updateRotateOverlay();
-  setTimeout(dismissRotateNotice, 10000);
+  if (isPortrait()) {
+    awaitingRotationReveal = true;
+  } else {
+    rotateGateActive = false;
+    revealFrenteInteractive();
+  }
 }
-
-function dismissRotateNotice() {
-  rotateNoticeDismissed = true;
-  updateRotateOverlay();
-}
-
-// Se retira solo en cuanto el usuario toca el edificio: ya se ha
-// apañado en vertical, y ahí abajo es justo donde aparece el panel de
-// la planta seleccionada.
-document.addEventListener('serra:floor-select', dismissRotateNotice);
-document.addEventListener('serra:floor-hover', dismissRotateNotice);
 
 function handleOrientationChange() {
-  // Al girar a apaisado el aviso sobra; si vuelve a vertical sin
-  // haberlo descartado, reaparece.
   updateRotateOverlay();
+  if (awaitingRotationReveal && !isPortrait()) {
+    awaitingRotationReveal = false;
+    rotateGateActive = false;
+    updateRotateOverlay();
+    revealFrenteInteractive();
+  }
 }
-
-rotateDismiss?.addEventListener('click', dismissRotateNotice);
 
 updateRotateOverlay();
 window.addEventListener('resize', handleOrientationChange);

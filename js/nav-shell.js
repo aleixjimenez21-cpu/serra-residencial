@@ -57,12 +57,26 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDrawer();
 });
 
-sidebarToggle.addEventListener('click', () => appSidebar.classList.toggle('expanded'));
+sidebarToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  appSidebar.classList.toggle('expanded');
+});
+
+// En móvil el menú abierto es un panel que tapa media pantalla: se
+// cierra al tocar fuera, como cualquier panel de móvil.
+document.addEventListener('click', (e) => {
+  if (!appSidebar.classList.contains('expanded')) return;
+  if (appSidebar.contains(e.target)) return;
+  appSidebar.classList.remove('expanded');
+});
 topContactBtn.addEventListener('click', () => { if (typeof openContactModal === 'function') openContactModal(); });
 
 appSidebar.querySelectorAll('.sidebar-item').forEach((btn) => {
   btn.addEventListener('click', () => {
     const key = btn.dataset.section;
+    // Elegida una sección, el menú se recoge: en móvil ocupa media
+    // pantalla y taparía justo lo que se acaba de abrir.
+    appSidebar.classList.remove('expanded');
 
     if (key === 'explorar') {
       closeDrawer();
