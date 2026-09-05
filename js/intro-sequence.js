@@ -189,38 +189,45 @@ function revealFrenteInteractive() {
 // En cuanto gira a horizontal con la puerta armada, se revela la
 // fachada automáticamente.
 const rotateOverlay = document.getElementById('rotate-overlay');
-let rotateGateActive = false;
-let awaitingRotationReveal = false;
+const rotateDismiss = document.getElementById('rotate-dismiss');
+let rotateNoticeActive = false;   // ¿estamos ya en la vista interactiva?
+let rotateNoticeDismissed = false; // el usuario ha dicho que sigue en vertical
 
 function updateRotateOverlay() {
-  const show = rotateGateActive && isMobileDevice() && isPortrait();
+  const show = rotateNoticeActive && !rotateNoticeDismissed
+    && isMobileDevice() && isPortrait();
   rotateOverlay.classList.toggle('hidden', !show);
 }
 
-// Se llama al terminar (u omitir) el VÍDEO 2 (frente-video) en móvil
-// -- justo antes de la vista interactiva final, que necesita
-// horizontal. Si ya está en horizontal (el usuario giró mientras veía
-// el vídeo), pasa directo sin mostrar nada.
+// Se llama al terminar (u omitir) el VÍDEO 2 en móvil. Ya NO bloquea:
+// la vista interactiva se revela siempre, en la orientación que sea, y
+// en vertical solo se sugiere girar. Quien prefiera seguir en vertical
+// puede: el edificio se encaja entero (ver layoutFachada).
 function armRotationGate() {
-  rotateGateActive = true;
+  rotateNoticeActive = true;
+  revealFrenteInteractive();
   updateRotateOverlay();
-  if (isPortrait()) {
-    awaitingRotationReveal = true;
-  } else {
-    rotateGateActive = false;
-    revealFrenteInteractive();
-  }
+  setTimeout(dismissRotateNotice, 10000);
 }
 
-function handleOrientationChange() {
+function dismissRotateNotice() {
+  rotateNoticeDismissed = true;
   updateRotateOverlay();
-  if (awaitingRotationReveal && !isPortrait()) {
-    awaitingRotationReveal = false;
-    rotateGateActive = false;
-    updateRotateOverlay();
-    revealFrenteInteractive();
-  }
 }
+
+// Se retira solo en cuanto el usuario toca el edificio: ya se ha
+// apañado en vertical, y ahí abajo es justo donde aparece el panel de
+// la planta seleccionada.
+document.addEventListener('serra:floor-select', dismissRotateNotice);
+document.addEventListener('serra:floor-hover', dismissRotateNotice);
+
+function handleOrientationChange() {
+  // Al girar a apaisado el aviso sobra; si vuelve a vertical sin
+  // haberlo descartado, reaparece.
+  updateRotateOverlay();
+}
+
+rotateDismiss?.addEventListener('click', dismissRotateNotice);
 
 updateRotateOverlay();
 window.addEventListener('resize', handleOrientationChange);

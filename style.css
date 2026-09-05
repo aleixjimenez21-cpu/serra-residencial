@@ -941,7 +941,23 @@ img, video { display: block; max-width: 100%; }
    calcula JS en cada resize -- ver layoutFachada() en script.js --
    para que, aunque se recorte la foto, los pisos sigan cayendo
    pixel a pixel sobre la fachada real. */
-.fachada-wrap { position: absolute; inset: 0; }
+.fachada-wrap { position: absolute; inset: 0; z-index: 1; }
+
+/* En vertical la fachada se encaja por ancho y sobra mucho alto (ver
+   layoutFachada). En vez de dejar dos franjas negras, se rellena con la
+   propia foto muy desenfocada y oscurecida: el edificio nítido queda
+   flotando sobre su propio ambiente en vez de sobre un vacío. */
+@media (orientation: portrait) {
+  .plantas-section::before {
+    content: '';
+    position: absolute;
+    inset: -60px;
+    z-index: 0;
+    background: url('frente.webp') center / cover no-repeat;
+    filter: blur(38px) brightness(0.4) saturate(0.85);
+    pointer-events: none;
+  }
+}
 /* max-width: none anula la regla global "img { max-width:100% }" --
    aquí el ancho SÍ debe poder superar el contenedor (es el recorte
    "cover" calculado por JS en layoutFachada()). */
@@ -1390,45 +1406,55 @@ img, video { display: block; max-width: 100%; }
    ROTA TU DISPOSITIVO — overlay a pantalla completa, solo móvil +
    vertical (JS decide cuándo mostrarlo, ver updateRotateOverlay()).
    ============================================================= */
+/* Aviso, no barrera: sugiere girar el móvil pero deja seguir en
+   vertical (donde el edificio se encaja entero, ver layoutFachada).
+   Va abajo, sin tapar la escena, y se puede descartar. */
 .rotate-overlay {
   position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: var(--ink);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(2rem, 10vh, 3.5rem);
-  transition: opacity .4s var(--ease);
-}
-.rotate-overlay.hidden { opacity: 0; pointer-events: none; }
-
-.rotate-brand {
-  position: absolute;
-  top: clamp(1.4rem, 6vw, 2.2rem);
   left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  color: var(--white);
-  font-size: 0.85rem;
-  letter-spacing: 0.3em;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.rotate-brand span { color: var(--gold); font-weight: 400; }
-
-.rotate-content {
+  z-index: 60;
+  width: max-content;
+  max-width: calc(100vw - 1.6rem);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1.6rem;
-  padding: 0 2rem;
+  gap: 0.7rem;
+  padding: 0.7rem 0.8rem 0.7rem 1rem;
+  background: rgba(18, 17, 14, 0.72);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  transition: opacity .4s var(--ease), transform .4s var(--ease);
 }
+.rotate-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(8px);
+}
+.rotate-dismiss {
+  flex: none;
+  padding: 0.5em 0.95em;
+  background: rgba(255,255,255,0.92);
+  border: none;
+  border-radius: 999px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.rotate-dismiss:hover { background: #fff; }
 
 .rotate-icon {
   position: relative;
-  width: 72px;
-  height: 72px;
+  flex: none;
+  width: 26px;
+  height: 26px;
   color: var(--gold);
 }
 .rotate-icon svg:first-child {
@@ -1440,10 +1466,10 @@ img, video { display: block; max-width: 100%; }
 }
 .rotate-arrow {
   position: absolute;
-  top: -14px;
-  right: -14px;
-  width: 22px;
-  height: 22px;
+  top: -6px;
+  right: -7px;
+  width: 12px;
+  height: 12px;
   color: rgba(200,168,116,0.7);
   animation: rotate-arrow-spin 2.4s ease-in-out infinite;
 }
@@ -1461,21 +1487,10 @@ img, video { display: block; max-width: 100%; }
 .rotate-text {
   margin: 0;
   color: var(--cream);
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.65;
-  letter-spacing: 0.02em;
-}
-.rotate-hint {
-  margin: -0.8rem 0 0;
-  max-width: 280px;
-  color: var(--stone);
-  text-align: center;
   font-size: 0.78rem;
-  line-height: 1.55;
+  line-height: 1.35;
   letter-spacing: 0.01em;
 }
-
 /* =============================================================
    TUTORIAL INTERACTIVO — onboarding tipo videojuego SOBRE la
    interfaz real (no una pantalla aparte). El fondo se atenúa muy
