@@ -131,11 +131,15 @@
 <nav id="app-sidebar" class="app-sidebar hidden" aria-label="Navegación" data-tutorial="sidebar">
   <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Abrir menú" title="Menú">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+    <!-- Aviso de viviendas guardadas para comparar: en móvil el menú
+         está cerrado, así que sin esto no hay forma de saber que se ha
+         guardado algo ni dónde verlo. Lo actualiza comparator.js. -->
+    <span id="sidebar-badge" class="sidebar-badge hidden">0</span>
   </button>
   <ul class="sidebar-list">
     <li><button class="sidebar-item" data-section="explorar" title="Explorar edificio"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 21V9l8-6 8 6v12" stroke-linejoin="round"/><path d="M9 21v-7h6v7"/></svg></span><span class="sidebar-label">Explorar</span></button></li>
     <li><button class="sidebar-item" data-section="viviendas" title="Viviendas"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="4" width="14" height="16" rx="1"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h6"/></svg></span><span class="sidebar-label">Viviendas</span></button></li>
-    <li><button class="sidebar-item" data-section="comparador" data-tutorial="compare" title="Comparador"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4v16M16 4v16" stroke-linecap="round"/><path d="M5 8h6M13 16h6" stroke-linecap="round"/></svg></span><span class="sidebar-label">Comparador</span></button></li>
+    <li><button class="sidebar-item" data-section="comparador" data-tutorial="compare" title="Comparador"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4v16M16 4v16" stroke-linecap="round"/><path d="M5 8h6M13 16h6" stroke-linecap="round"/></svg></span><span class="sidebar-label">Comparador</span><span id="sidebar-compare-badge" class="sidebar-badge sidebar-badge--item hidden">0</span></button></li>
     <li><button class="sidebar-item" data-section="planos" title="Planos"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 4v16"/></svg></span><span class="sidebar-label">Planos</span></button></li>
     <li><button class="sidebar-item" data-section="promocion" title="La promoción"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="8.2"/><path d="M12 11v5.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="sidebar-label">Promoción</span></button></li>
     <li><button class="sidebar-item" data-section="calidades" title="Calidades"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3l3 6 6 .9-4.5 4.2 1 6-5.5-3-5.5 3 1-6L3 9.9 9 9z" stroke-linejoin="round"/></svg></span><span class="sidebar-label">Calidades</span></button></li>

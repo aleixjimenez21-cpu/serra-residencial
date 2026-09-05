@@ -33,10 +33,27 @@ function removeFromCompare(id) {
 // lo único que muestra el detalle, y solo al pulsarlo.
 const compareIndicator = document.getElementById('compare-indicator');
 const compareCount      = document.getElementById('compare-count');
+const sidebarBadge      = document.getElementById('sidebar-badge');
+const sidebarCompareBadge = document.getElementById('sidebar-compare-badge');
 
 function updateCompareIndicator() {
-  compareCount.textContent = compareIds.length;
-  compareIndicator.classList.toggle('hidden', compareIds.length === 0);
+  const n = compareIds.length;
+  compareCount.textContent = n;
+  compareIndicator.classList.toggle('hidden', n === 0);
+
+  // Aviso en el botón de menú: en móvil el menú está cerrado y sin esto
+  // el usuario guarda una vivienda y no ve que haya pasado nada, ni
+  // sabe dónde ir a verla.
+  [sidebarBadge, sidebarCompareBadge].forEach((b) => {
+    if (!b) return;
+    b.textContent = n;
+    b.classList.toggle('hidden', n === 0);
+  });
+  if (n > 0 && sidebarBadge) {
+    sidebarBadge.classList.remove('pulse');
+    void sidebarBadge.offsetWidth; // reinicia la animación aunque ya estuviera puesta
+    sidebarBadge.classList.add('pulse');
+  }
 }
 
 compareIndicator.addEventListener('click', () => {

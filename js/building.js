@@ -36,11 +36,21 @@ function updateFloorSelectorActive() {
   });
 }
 
+// Marca cuál es la vivienda elegida. Sin esto, en táctil (donde no hay
+// hover) tocabas una crujía y nada en el edificio indicaba cuál habías
+// tocado: solo aparecía el panel.
+function markSelectedSlice(slice) {
+  document.querySelectorAll('.unit-slice.selected')
+    .forEach((s) => s.classList.remove('selected'));
+  if (slice) slice.classList.add('selected');
+}
+
 function collapsePopped() {
   if (poppedZone) {
     poppedZone.classList.remove('popped');
     poppedZone = null;
   }
+  markSelectedSlice(null);
   if (typeof hideContextPanel === 'function') hideContextPanel();
   updateFloorSelectorActive();
 }
@@ -101,6 +111,7 @@ PLANTAS.forEach((planta) => {
       slice.addEventListener('click', (e) => {
         e.stopPropagation(); // no relanzar el toggle de pop-out del padre
         document.dispatchEvent(new CustomEvent('serra:unit-select', { detail: { unitId: slice.dataset.unitId } }));
+        markSelectedSlice(slice);
         openPanel(planta, u.letra);
       });
     }
