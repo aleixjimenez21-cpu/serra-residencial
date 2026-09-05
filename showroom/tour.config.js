@@ -61,7 +61,9 @@ export const SETTINGS = {
   arrowPitchDeg: -20,            // pitch de un enlace (solo se usa en modo 2d)
 
   // A dónde vuelve el botón "Viviendas" (el selector de pisos).
-  backUrl: '../index.html',
+  // El parámetro ?vista=edificio hace que la web entre directa al
+  // edificio interactivo, sin repetir la secuencia de vídeos.
+  backUrl: '../index.html?vista=edificio',
 };
 
 // -----------------------------------------------------------------
