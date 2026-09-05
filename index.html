@@ -96,10 +96,21 @@
      no hay "rotar": solo lo que existe de verdad.
      ============================================================ -->
 <div id="view-controls" class="view-controls hidden" data-tutorial="viewer-controls">
-  <button id="view-zoom-out" class="view-btn" aria-label="Alejar" title="Alejar">－</button>
-  <button id="view-reset" class="view-btn" aria-label="Centrar" title="Centrar">⟲</button>
-  <button id="view-zoom-in" class="view-btn" aria-label="Acercar" title="Acercar">＋</button>
-  <button id="view-fullscreen" class="view-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+  <!-- Iconos en SVG, no caracteres: los glifos tipo ＋ ⟲ ⛶ son de
+       ancho completo y cada tipografía los coloca a una altura
+       distinta, así que nunca quedan centrados en el círculo. -->
+  <button id="view-zoom-out" class="view-btn" aria-label="Alejar" title="Alejar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 12h12"/></svg>
+  </button>
+  <button id="view-reset" class="view-btn" aria-label="Centrar" title="Centrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.4 12a7.4 7.4 0 1 1-2.2-5.3"/><path d="M19.8 4.4V8.6h-4.2"/></svg>
+  </button>
+  <button id="view-zoom-in" class="view-btn" aria-label="Acercar" title="Acercar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>
+  </button>
+  <button id="view-fullscreen" class="view-btn" aria-label="Pantalla completa" title="Pantalla completa">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
 </div>
 
 <!-- ============================================================

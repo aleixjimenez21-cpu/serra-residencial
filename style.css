@@ -794,16 +794,23 @@ img, video { display: block; max-width: 100%; }
 .view-controls.hidden { opacity: 0; pointer-events: none; }
 .view-btn {
   width: 32px; height: 32px;
+  /* Centrado real del icono: sin esto el contenido se coloca por línea
+     base y queda descentrado dentro del círculo. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 0;
   background: var(--glass-dark);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--hairline);
   border-radius: 50%;
   color: rgba(255,255,255,0.75);
-  font-size: 0.85rem;
   cursor: pointer;
   transition: color .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
 }
+.view-btn svg { width: 15px; height: 15px; display: block; }
 .view-btn:hover { color: var(--gold); border-color: var(--gold-soft); transform: translateY(-1px); }
 
 #fachada-wrap { transition: transform .35s var(--ease); transform-origin: center center; }
@@ -1374,6 +1381,13 @@ img, video { display: block; max-width: 100%; }
   width: 42px;
   height: 42px;
   border-radius: 50%;
+  /* Mismo motivo que en .view-btn: sin centrado flex el signo se
+     coloca por línea base y queda bajo respecto al círculo. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
   background: var(--ink);
   color: var(--cream);
   border: 1px solid rgba(255,255,255,0.2);
@@ -1832,7 +1846,8 @@ img, video { display: block; max-width: 100%; }
     flex-direction: row;
     gap: 0.4rem;
   }
-  .view-btn { width: 30px; height: 30px; font-size: 0.78rem; }
+  .view-btn { width: 30px; height: 30px; }
+  .view-btn svg { width: 14px; height: 14px; }
 
   /* El panel de planta/vivienda sube lo justo para no pisarlos. */
   .context-panel { bottom: 3.1rem; }
