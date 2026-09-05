@@ -175,19 +175,17 @@ function revealFrenteInteractive() {
 }
 
 // -----------------------------------------------------------------
-// ROTA TU DISPOSITIVO
+// AVISO DE GIRAR EL MÓVIL — sugerencia, no barrera
 // -----------------------------------------------------------------
-// Solo en móvil. En PC no aparece nunca (aunque la ventana se deje
-// estrecha y alta): se distingue "móvil" por puntero táctil/sin
-// hover, no solo por el ancho.
+// En vertical la web funciona perfectamente: layoutFachada encaja el
+// edificio entero. Simplemente en apaisado se ve a pantalla completa,
+// y eso es lo que sugiere este aviso.
 //
-// La "puerta" (rotateGateActive) es lo que decide si el aviso puede
-// llegar a mostrarse: solo se arma al terminar el VÍDEO 2 (frente-
-// video) en móvil (armRotationGate). Antes de eso -- durante la intro
-// en bucle, el vídeo vertical, o mientras se leen los popups -- el
-// usuario puede estar perfectamente en vertical sin que salte nada.
-// En cuanto gira a horizontal con la puerta armada, se revela la
-// fachada automáticamente.
+// Solo aparece en móvil (se distingue por puntero táctil/sin hover, no
+// por el ancho: en PC no sale nunca aunque la ventana quede estrecha),
+// solo en vertical, y solo una vez llegados a la vista interactiva --
+// durante la intro y los vídeos no molesta. Se va al girar, al tocar
+// el edificio, al pulsar "Seguir así" o a los 10 segundos.
 const rotateOverlay = document.getElementById('rotate-overlay');
 const rotateDismiss = document.getElementById('rotate-dismiss');
 let rotateNoticeActive = false;   // ¿estamos ya en la vista interactiva?
