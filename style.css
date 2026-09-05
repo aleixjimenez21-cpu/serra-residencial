@@ -1,0 +1,1671 @@
+/* =============================================================
+   SERRA RESIDENCIAL — showroom web
+   Paleta: blanco cálido, travertino claro, negro mate, acento dorado
+   suave (coherente con los materiales del proyecto en CLAUDE.md).
+   ============================================================= */
+
+:root {
+  --cream:        #f4f1ec;
+  --cream-dark:   #e8e2d6;
+  --ink:          #111111;
+  --ink-soft:     #2a2a28;
+  --stone:        #a89a80;
+  --gold:         #d6c5a4;      /* SOLO detalle: acentos, no fondos grandes */
+  --gold-soft:    rgba(214, 197, 164, 0.4);
+  --white:        #ffffff;
+  /* Cristal muy sutil, sin tinte marrón -- para riel/paneles flotantes */
+  --glass-dark:   rgba(17, 17, 17, 0.5);
+  --glass-light:  rgba(255, 255, 255, 0.08);
+  --hairline:     rgba(255, 255, 255, 0.14);
+  --ease: cubic-bezier(.4, 0, .2, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--ink);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Arial, "Segoe UI", sans-serif;
+  overflow: hidden; /* app de una sola pantalla, sin scroll de página */
+}
+
+img, video { display: block; max-width: 100%; }
+
+.hidden { display: none !important; }
+
+/* =============================================================
+   PANTALLAS A PANTALLA COMPLETA (intro / descenso / fundido)
+   ============================================================= */
+.stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--ink);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.stage-video, .stage-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#intro-screen.fading-out { opacity: 0; transition: opacity 0.9s var(--ease); pointer-events: none; }
+
+#descenso-screen { opacity: 0; transition: opacity 0.9s var(--ease); z-index: 11; }
+#descenso-screen.visible { opacity: 1; }
+
+#fachada-fade { opacity: 0; transition: opacity 1.4s var(--ease); z-index: 12; }
+#fachada-fade.visible { opacity: 1; }
+
+/* Segundo vídeo (frente), tras cerrar la guía -- mismo patrón que el
+   descenso, pero por encima del fondo fijo de fachada.webp (z-index 12). */
+#frente-video-screen { opacity: 0; transition: opacity 0.9s var(--ease); z-index: 13; }
+#frente-video-screen.visible { opacity: 1; }
+
+/* Brillo de bienvenida: una sola pasada, sincronizada con el primer
+   popup de la guía, sobre el contorno aproximado de todo el
+   edificio en fachada.webp (aérea). Igual que el glow de cada planta
+   (soft-light + backdrop-filter), pero cubriendo el edificio entero
+   de una vez, no planta a planta. */
+.building-glow {
+  position: absolute;
+  left: 28.5%;
+  top: 13%;
+  width: 69%;
+  height: 80%;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 6px;
+}
+.building-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,221,160,.6), rgba(255,190,110,.22) 60%, transparent 100%);
+  mix-blend-mode: soft-light;
+}
+.building-glow.active {
+  opacity: 1;
+  backdrop-filter: brightness(1.16) saturate(1.12);
+  -webkit-backdrop-filter: brightness(1.16) saturate(1.12);
+  transition: opacity 1.1s ease-in, backdrop-filter 1.1s ease-in;
+}
+.building-glow.fade-out {
+  opacity: 0;
+  backdrop-filter: brightness(1) saturate(1);
+  -webkit-backdrop-filter: brightness(1) saturate(1);
+  transition: opacity 1.3s ease-out, backdrop-filter 1.3s ease-out;
+}
+
+/* Overlay sutil para que el botón INGRESAR resalte sobre el vídeo */
+.intro-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.55) 0%, rgba(0,0,0,.05) 35%, rgba(0,0,0,.25) 100%);
+  z-index: 1;
+}
+
+.btn-ingresar {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 1.1em 3em;
+  font-size: 0.95rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--white);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .35s var(--ease), transform .35s var(--ease), letter-spacing .35s var(--ease);
+}
+.btn-ingresar:hover { background: rgba(255,255,255,0.18); letter-spacing: 0.34em; }
+.btn-ingresar:active { transform: translateX(-50%) scale(0.97); }
+.btn-ingresar.fading { opacity: 0; pointer-events: none; transition: opacity .5s var(--ease); }
+
+/* Omitir intro: aparece durante el descenso, salta directo a la
+   fachada clicable sin esperar a que el vídeo termine. */
+.btn-skip-intro {
+  position: absolute;
+  top: clamp(1.2rem, 4vw, 2.2rem);
+  right: clamp(1.2rem, 4vw, 2.2rem);
+  z-index: 3;
+  padding: 0.7em 1.3em;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--white);
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0;
+  animation: skip-fade-in .6s var(--ease) .6s forwards;
+  transition: background .3s var(--ease), opacity .3s var(--ease);
+}
+.btn-skip-intro:hover { background: rgba(0,0,0,0.5); }
+@keyframes skip-fade-in { to { opacity: 1; } }
+
+/* =============================================================
+   PANTALLA DE CARGA — por encima de todo (incl. el aviso de rotar).
+   ============================================================= */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: opacity .5s var(--ease);
+}
+.loading-screen.hidden { opacity: 0; pointer-events: none; }
+.loading-brand {
+  color: var(--white);
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  letter-spacing: 0.32em;
+  font-weight: 600;
+}
+.loading-brand span { color: var(--gold); font-weight: 300; }
+.loading-caption {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+.loading-percent {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =============================================================
+   IDENTIDAD — una línea, discreta, arriba a la izquierda. Nada de
+   bloque de branding ni titular grande: la arquitectura habla sola.
+   ============================================================= */
+.site-nav {
+  position: fixed;
+  top: clamp(1.3rem, 3vw, 1.8rem);
+  left: clamp(1.3rem, 3vw, 1.8rem);
+  z-index: 30;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity .8s var(--ease), transform .8s var(--ease);
+  pointer-events: none;
+}
+.site-nav:not(.hidden) { opacity: 1; transform: translateY(0); }
+
+.nav-brand {
+  color: var(--white);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  font-weight: 500;
+  white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0,0,0,.4);
+}
+
+/* Acciones superiores derechas: comparar + contacto, discretas */
+.top-actions {
+  position: fixed;
+  top: clamp(1.2rem, 3vw, 1.7rem);
+  right: clamp(1.2rem, 3vw, 1.7rem);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity .8s var(--ease), transform .8s var(--ease);
+}
+.top-actions:not(.hidden) { opacity: 1; transform: translateY(0); }
+.top-action-btn, .compare-indicator {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.4em 0;
+  text-shadow: 0 1px 8px rgba(0,0,0,.4);
+  transition: opacity .2s var(--ease);
+}
+.top-action-btn:hover, .compare-indicator:hover { opacity: 0.7; }
+.compare-indicator { color: var(--gold); }
+.compare-indicator.hidden { display: none; }
+.compare-indicator + .top-action-btn { border-left: 1px solid rgba(255,255,255,0.25); padding-left: 0.7rem; }
+
+/* =============================================================
+   INTRODUCCIÓN MÍNIMA — sustituye al hero. Se apaga en cuanto el
+   usuario interactúa con el edificio (building.js).
+   ============================================================= */
+.explore-hint {
+  position: fixed;
+  left: clamp(1.3rem, 3vw, 1.8rem);
+  bottom: clamp(4.2rem, 9vw, 5.2rem);
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .6s var(--ease), transform .6s var(--ease);
+  pointer-events: none;
+}
+.explore-hint:not(.hidden) { opacity: 1; transform: translateY(0); pointer-events: auto; cursor: pointer; }
+.explore-hint.dimmed { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.explore-hint-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-shadow: 0 1px 8px rgba(0,0,0,.4);
+}
+.explore-hint-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+  text-shadow: 0 1px 8px rgba(0,0,0,.4);
+}
+
+/* =============================================================
+   SIDEBAR — riel ultrafino: icono + micro-label. Cada punto se
+   expande un poco al pasar el cursor; el icono superior fija el
+   panel completo abierto. Cristal oscuro muy sutil, sin tinte marrón.
+   ============================================================= */
+.app-sidebar {
+  position: fixed;
+  top: 50%;
+  left: clamp(0.9rem, 2.4vw, 1.4rem);
+  transform: translateY(-50%);
+  z-index: 29;
+  width: 50px;
+  background: var(--glass-dark);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid var(--hairline);
+  border-radius: 25px;
+  padding: 0.6rem 0;
+  opacity: 0;
+  transition: opacity .6s var(--ease), width .35s var(--ease), border-radius .35s var(--ease);
+}
+.app-sidebar:not(.hidden) { opacity: 1; }
+.app-sidebar.hidden { pointer-events: none; }
+.app-sidebar.expanded { width: 176px; border-radius: 14px; }
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 34px;
+  margin-bottom: 0.3rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--hairline);
+  background: none;
+  border-left: none; border-right: none; border-top: none;
+  cursor: pointer;
+  color: var(--cream);
+}
+.sidebar-toggle svg { width: 15px; height: 15px; }
+.sidebar-toggle:hover { color: var(--gold); }
+
+.sidebar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  height: 40px;
+  padding: 0 0.5rem 0 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.62);
+  text-align: left;
+  transition: color .25s var(--ease);
+}
+.sidebar-icon { display: flex; flex-shrink: 0; }
+.sidebar-icon svg { width: 17px; height: 17px; }
+.sidebar-item:hover, .sidebar-item.active { color: var(--white); }
+.sidebar-item.active .sidebar-icon { color: var(--gold); }
+.sidebar-item { position: relative; }
+.sidebar-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-width .3s var(--ease), opacity .2s var(--ease);
+}
+.app-sidebar.expanded .sidebar-label { max-width: 140px; opacity: 1; }
+/* Riel colapsado: al pasar el cursor por un punto, su etiqueta se
+   despliega como una pequeña bandera junto al icono (sin ensanchar
+   todo el riel). Es el "expandirse suavemente" pedido. */
+.app-sidebar:not(.expanded) .sidebar-item:hover .sidebar-label,
+.app-sidebar:not(.expanded) .sidebar-item:focus-visible .sidebar-label {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+  max-width: 160px;
+  opacity: 1;
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--hairline);
+  color: var(--white);
+  padding: 0.45em 0.75em;
+  border-radius: 6px;
+  pointer-events: none;
+}
+.sidebar-footer {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  padding: 0 15px;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4);
+  white-space: nowrap;
+  transition: max-height .3s var(--ease), opacity .3s var(--ease), padding .3s var(--ease);
+}
+.sidebar-footer span { color: var(--gold); }
+.app-sidebar.expanded .sidebar-footer { max-height: 2rem; opacity: 1; padding: 0.7rem 15px 0; margin-top: 0.3rem; border-top: 1px solid var(--hairline); }
+
+.sidebar-restart-tutorial {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  width: 100%;
+  padding: 0 15px;
+  margin: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: max-height .3s var(--ease), opacity .3s var(--ease), padding .3s var(--ease), color .2s var(--ease);
+}
+.sidebar-restart-tutorial:hover { color: var(--gold); }
+.app-sidebar.expanded .sidebar-restart-tutorial { max-height: 1.6rem; opacity: 1; padding: 0.5rem 15px 0; }
+
+/* =============================================================
+   DRAWER GENÉRICO — reutiliza el look de .side-drawer (misma clase),
+   solo cambia el contenido que registra cada sección.
+   ============================================================= */
+.section-drawer-body { padding-top: 0.5rem; }
+.drawer-placeholder {
+  color: var(--ink-soft);
+  opacity: 0.7;
+  font-size: 0.9rem;
+  margin-top: 2rem;
+  text-align: center;
+}
+.drawer-title {
+  margin: 0.6rem 0 0.2rem;
+  font-weight: 300;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.drawer-subtitle {
+  margin: 0 0 1.4rem;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  font-size: 0.85rem;
+}
+
+/* --------------------- Selector de viviendas (drawer 02) --------------------- */
+.sel-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--cream-dark);
+}
+.sel-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.sel-filters select {
+  font: inherit;
+  padding: 0.5em 0.6em;
+  border: 1px solid var(--stone);
+  border-radius: 2px;
+  background: var(--white);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.85rem;
+}
+.sel-count { font-size: 0.78rem; color: var(--ink-soft); opacity: 0.75; margin-bottom: 0.8rem; }
+.sel-grid { display: flex; flex-direction: column; gap: 0.9rem; }
+.sel-card {
+  border: 1px solid var(--cream-dark);
+  border-radius: 4px;
+  padding: 1rem 1.1rem;
+  transition: border-color .25s var(--ease);
+}
+.sel-card:hover { border-color: var(--gold); }
+.sel-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.sel-card-title { font-size: 1rem; font-weight: 600; letter-spacing: 0.03em; }
+.sel-card-specs { display: flex; gap: 0.9rem; font-size: 0.8rem; color: var(--ink-soft); margin-bottom: 0.4rem; flex-wrap: wrap; }
+.sel-card-price { margin: 0 0 0.8rem; font-size: 0.95rem; color: var(--gold); font-weight: 500; }
+.sel-card-actions { display: flex; gap: 0.6rem; }
+.btn-view, .btn-compare-mini {
+  flex: 1;
+  padding: 0.55em 0.4em;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .25s var(--ease), color .25s var(--ease);
+}
+.btn-view { background: var(--ink); border: 1px solid var(--ink); color: var(--white); }
+.btn-view:hover { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.btn-compare-mini { background: none; border: 1px solid var(--stone); color: var(--ink-soft); }
+.btn-compare-mini:hover { border-color: var(--gold); color: var(--gold); }
+
+/* =============================================================
+   OVERLAY DEL COMPARADOR — tabla, necesita más ancho que un drawer.
+   ============================================================= */
+.comparator-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 46;
+  background: rgba(10,8,5,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s var(--ease);
+}
+.comparator-overlay.open { opacity: 1; pointer-events: auto; }
+.comparator-panel {
+  position: relative;
+  background: var(--cream);
+  border-radius: 6px;
+  padding: clamp(1.6rem, 4vw, 2.6rem);
+  width: min(900px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  transform: translateY(14px);
+  transition: transform .35s var(--ease);
+  box-shadow: 0 40px 90px -20px rgba(0,0,0,0.5);
+}
+.comparator-overlay.open .comparator-panel { transform: translateY(0); }
+.compare-table-wrap { overflow-x: auto; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.compare-table th, .compare-table td {
+  padding: 0.7em 0.9em;
+  text-align: left;
+  border-bottom: 1px solid var(--cream-dark);
+  white-space: nowrap;
+}
+.compare-table thead th {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  position: relative;
+}
+.compare-table tbody th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.compare-table-remove {
+  background: none; border: none; cursor: pointer; color: var(--ink-soft);
+  margin-left: 0.5em; font-size: 0.75rem;
+}
+.compare-table-remove:hover { color: var(--gold); }
+
+/* =============================================================
+   CALCULADORA DE HIPOTECA (drawer 08)
+   ============================================================= */
+.calc-form { display: flex; flex-direction: column; gap: 1.3rem; margin-bottom: 1.6rem; }
+.calc-form label {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+}
+.calc-form input[type="number"] {
+  font: inherit; font-size: 1rem; padding: 0.6em 0.7em;
+  border: 1px solid var(--stone); border-radius: 2px; background: var(--white); color: var(--ink);
+}
+.calc-form input[type="range"] {
+  width: 100%; accent-color: var(--gold);
+}
+.calc-range-val { font-size: 0.8rem; color: var(--ink); text-transform: none; letter-spacing: normal; }
+.calc-result {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  padding: 1.4rem; margin-bottom: 1rem;
+  background: var(--cream-dark); border-radius: 6px; text-align: center;
+}
+.calc-result-label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+.calc-result-value { font-size: 2rem; font-weight: 300; color: var(--gold); font-variant-numeric: tabular-nums; }
+.calc-disclaimer { font-size: 0.72rem; color: var(--ink-soft); opacity: 0.75; line-height: 1.5; }
+
+/* =============================================================
+   ASISTENTE SERRA — círculo discreto + etiqueta al lado, nunca una
+   pastilla negra grande. Se siente parte de la interfaz, no un
+   plugin añadido después.
+   ============================================================= */
+.ai-widget {
+  position: fixed;
+  right: clamp(1rem, 4vw, 2rem);
+  bottom: clamp(1rem, 4vw, 2rem);
+  z-index: 44;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  transition: opacity .3s var(--ease), transform .25s var(--ease);
+}
+.ai-widget.hidden { opacity: 0; pointer-events: none; transform: scale(0.9); }
+.ai-widget-text {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-shadow: 0 1px 8px rgba(0,0,0,.4);
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity .25s var(--ease), transform .25s var(--ease);
+  white-space: nowrap;
+}
+.ai-widget:hover .ai-widget-text { opacity: 0.85; transform: translateX(0); }
+.ai-widget-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-dark);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--cream);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5);
+  transition: color .25s var(--ease), transform .25s var(--ease), border-color .25s var(--ease);
+}
+.ai-widget-btn svg { width: 18px; height: 18px; }
+.ai-widget-btn:hover { color: var(--gold); border-color: var(--gold-soft); transform: scale(1.05); }
+
+.ai-window {
+  position: fixed;
+  right: clamp(1rem, 4vw, 2rem);
+  bottom: clamp(1rem, 4vw, 2rem);
+  z-index: 45;
+  width: min(400px, 92vw);
+  max-height: min(500px, 76vh);
+  background: var(--cream);
+  border-radius: 14px;
+  box-shadow: 0 30px 70px -15px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  pointer-events: none;
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
+}
+.ai-window.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.ai-window-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 1.2rem 1.3rem 0.7rem;
+}
+.ai-window-title { display: block; font-size: 0.72rem; letter-spacing: 0.22em; font-weight: 600; color: var(--ink); }
+.ai-window-subtitle { display: block; margin-top: 0.2rem; font-size: 0.72rem; color: var(--ink-soft); opacity: 0.7; }
+.ai-window-intro { margin: 0 1.3rem 0.9rem; font-size: 0.9rem; color: var(--ink); font-weight: 300; }
+.ai-messages { flex: 1; overflow-y: auto; padding: 0 1.3rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.ai-msg { padding: 0.6em 0.9em; border-radius: 10px; font-size: 0.85rem; line-height: 1.45; max-width: 88%; }
+.ai-msg--ai { background: var(--cream-dark); color: var(--ink); align-self: flex-start; }
+.ai-msg--user { background: var(--ink); color: var(--white); align-self: flex-end; }
+.ai-suggestions { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.8rem 1.3rem 0; }
+.ai-suggestion {
+  background: none; border: 1px solid var(--stone); color: var(--ink-soft);
+  padding: 0.4em 0.7em; border-radius: 20px; font-size: 0.72rem; cursor: pointer;
+  transition: border-color .25s var(--ease), color .25s var(--ease);
+}
+.ai-suggestion:hover { border-color: var(--gold); color: var(--gold); }
+.ai-form { display: flex; gap: 0.5rem; padding: 0.9rem 1.3rem 1.2rem; }
+.ai-form input {
+  flex: 1; font: inherit; padding: 0.6em 0.8em;
+  border: 1px solid var(--stone); border-radius: 20px; background: var(--white); color: var(--ink);
+}
+.ai-form button {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: var(--ink); color: var(--white); border: none; cursor: pointer; font-size: 1rem;
+  transition: background .25s var(--ease);
+}
+.ai-form button:hover { background: var(--gold); color: var(--ink); }
+
+/* =============================================================
+   PANELES INFORMATIVOS — Promoción / Calidades / Ubicación / Planos
+   ============================================================= */
+.promo-stats { display: flex; gap: 1.6rem; margin-bottom: 1.8rem; }
+.promo-stat { display: flex; flex-direction: column; }
+.promo-stat-num { font-size: 2.4rem; font-weight: 200; color: var(--gold); line-height: 1; }
+.promo-stat-label { margin-top: 0.4rem; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.promo-list { list-style: none; margin: 0; padding: 0; }
+.promo-list li {
+  display: flex; justify-content: space-between; gap: 1rem;
+  padding: 0.8rem 0; border-top: 1px solid var(--cream-dark);
+  font-size: 0.88rem;
+}
+.promo-list li span:first-child { color: var(--ink-soft); }
+.promo-list li span:last-child { color: var(--ink); text-align: right; }
+
+.calidades-accordion { display: flex; flex-direction: column; }
+.calidad-item { border-top: 1px solid var(--cream-dark); }
+.calidad-item:last-child { border-bottom: 1px solid var(--cream-dark); }
+.calidad-head {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  background: none; border: none; padding: 0.9rem 0; cursor: pointer;
+  font-size: 0.88rem; color: var(--ink); text-align: left;
+}
+.calidad-chevron { color: var(--gold); font-size: 1rem; transition: transform .25s var(--ease); }
+.calidad-item.open .calidad-chevron { transform: rotate(45deg); }
+.calidad-body { max-height: 0; overflow: hidden; transition: max-height .3s var(--ease); }
+.calidad-item.open .calidad-body { max-height: 300px; }
+.calidad-body ul { margin: 0 0 1rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: 0.82rem; line-height: 1.7; }
+
+.ubicacion-map-placeholder {
+  height: 160px; border: 1px dashed var(--stone); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--stone);
+  margin-bottom: 1.4rem;
+}
+.ubicacion-cat { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; border-top: 1px solid var(--cream-dark); font-size: 0.85rem; }
+.ubicacion-cat-name { color: var(--ink); font-weight: 500; }
+.ubicacion-cat-items { color: var(--ink-soft); opacity: 0.75; text-align: right; }
+
+.drawer-note { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.55; margin: 1rem 0 1.2rem; }
+
+/* =============================================================
+   MODAL DE CONTACTO
+   ============================================================= */
+.contact-modal-overlay {
+  position: fixed; inset: 0; z-index: 47;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(1rem, 4vw, 2rem);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s var(--ease);
+}
+.contact-modal-overlay.open { opacity: 1; pointer-events: auto; }
+.contact-modal-panel {
+  position: relative;
+  background: var(--cream);
+  border-radius: 8px;
+  padding: clamp(1.6rem, 4vw, 2.2rem);
+  width: min(420px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  transform: translateY(14px);
+  transition: transform .3s var(--ease);
+  box-shadow: 0 40px 90px -20px rgba(0,0,0,0.5);
+}
+.contact-modal-overlay.open .contact-modal-panel { transform: translateY(0); }
+.contact-form-short { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.6rem; }
+.contact-form-short label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.contact-form-short input, .contact-form-short select {
+  font: inherit; padding: 0.65em 0.8em; border: 1px solid var(--stone); border-radius: 2px;
+  background: var(--white); color: var(--ink); text-transform: none; letter-spacing: normal; font-size: 0.9rem;
+}
+.contact-form-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.4rem; }
+.form-success { color: var(--gold); font-size: 0.92rem; text-align: center; padding: 1.2rem 0; }
+
+/* =============================================================
+   CONTROLES DE VISTA — botones individuales y mínimos, sin cápsula
+   agrupando todo.
+   ============================================================= */
+.view-controls {
+  position: fixed;
+  left: clamp(1rem, 3vw, 1.8rem);
+  bottom: clamp(1rem, 4vw, 2rem);
+  z-index: 27;
+  display: flex;
+  gap: 0.5rem;
+  opacity: 1;
+  transition: opacity .4s var(--ease);
+}
+.view-controls.hidden { opacity: 0; pointer-events: none; }
+.view-btn {
+  width: 32px; height: 32px;
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+}
+.view-btn:hover { color: var(--gold); border-color: var(--gold-soft); transform: translateY(-1px); }
+
+#fachada-wrap { transition: transform .35s var(--ease); transform-origin: center center; }
+
+/* =============================================================
+   SELECTOR DE PLANTAS — flotante junto al edificio, secundario al
+   hover directo sobre la fachada. Se genera desde JS (building.js).
+   ============================================================= */
+.floor-selector {
+  position: fixed;
+  top: 50%;
+  right: clamp(1rem, 3vw, 2rem);
+  transform: translateY(-50%);
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0.5;
+  transition: opacity .35s var(--ease);
+}
+.floor-selector:hover { opacity: 1; }
+.floor-selector.hidden { opacity: 0; pointer-events: none; }
+.floor-selector-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 0.3rem;
+  text-shadow: 0 1px 6px rgba(0,0,0,.4);
+}
+.floor-selector-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.floor-item {
+  position: relative;
+  width: 30px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 3px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+}
+.floor-item:hover, .floor-item.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(214,197,164,0.1);
+}
+.floor-item-tooltip {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 10px;
+  white-space: nowrap;
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--hairline);
+  color: var(--white);
+  padding: 0.4em 0.7em;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s var(--ease);
+}
+.floor-item:hover .floor-item-tooltip { opacity: 1; }
+
+/* =============================================================
+   ESTADO DE DISPONIBILIDAD — colores apagados, nada saturado.
+   ============================================================= */
+.estado-badge {
+  display: inline-block;
+  margin: 0.3rem 0 0.9rem;
+  padding: 0.28em 0.75em;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+.estado-badge--disponible { background: rgba(122,150,110,0.16); color: #5c7a4e; }
+.estado-badge--reservado  { background: rgba(196,158,84,0.18); color: #8a6a2a; }
+.estado-badge--vendido    { background: rgba(140,140,140,0.18); color: #6a6a6a; }
+
+.unit-slice.estado-reservado { opacity: 0.82; }
+.unit-slice.estado-vendido { opacity: 0.6; }
+
+/* Acciones de cada ficha de vivienda dentro del panel */
+.unit-card-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.btn-compare, .btn-request {
+  width: 100%;
+  padding: 0.7em;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+}
+.btn-compare { background: none; border: 1px solid var(--stone); color: var(--ink-soft); }
+.btn-compare:hover { border-color: var(--gold); color: var(--gold); }
+.btn-request { background: var(--ink); border: 1px solid var(--ink); color: var(--white); }
+.btn-request:hover { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+
+/* =============================================================
+   CONTENIDO PRINCIPAL — el edificio a pantalla completa, sin scroll,
+   sin secciones adicionales.
+   ============================================================= */
+#main-content {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity .8s var(--ease);
+  background: var(--ink);
+}
+#main-content.visible { opacity: 1; }
+
+.plantas-section {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+/* La imagen se ajusta por COVER (llena toda la pantalla, en cualquier
+   proporción de dispositivo, sin márgenes) con el foco centrado en el
+   edificio. El tamaño/posición exactos (y los de cada hotspot) los
+   calcula JS en cada resize -- ver layoutFachada() en script.js --
+   para que, aunque se recorte la foto, los pisos sigan cayendo
+   pixel a pixel sobre la fachada real. */
+.fachada-wrap { position: absolute; inset: 0; }
+/* max-width: none anula la regla global "img { max-width:100% }" --
+   aquí el ancho SÍ debe poder superar el contenedor (es el recorte
+   "cover" calculado por JS en layoutFachada()). */
+.fachada-img { position: absolute; display: block; max-width: none; }
+
+/* ---------------------------------------------------------------
+   PLANTAS SELECCIONABLES — sin cajas ni bordes dibujados encima de
+   la foto: la propia fachada se ilumina (backdrop-filter sobre los
+   píxeles reales + un barrido de luz cálida en blend "soft-light"),
+   como si esa franja de ventanas se encendiera.
+   --------------------------------------------------------------- */
+.planta-zone {
+  position: absolute;
+  z-index: 1;
+  border: none;
+  border-radius: 2px;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  outline: none;
+  overflow: hidden;
+  transition: transform .55s cubic-bezier(.3,1.35,.5,1), z-index 0s;
+  /* Bordes difuminados: el brillo se apaga en degradado hacia el borde
+     de la zona en vez de cortar en seco como una caja rectangular. */
+  -webkit-mask-image: radial-gradient(ellipse 70% 80% at center, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 80% at center, #000 45%, transparent 100%);
+}
+
+/* Barrido de luz cálida, mezclado con la foto real (no una capa plana) */
+.planta-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,214,150,.55), rgba(255,190,110,.18) 60%, transparent 100%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity .6s var(--ease);
+}
+/* Contorno de luz: invisible en reposo, solo aparece al iluminar */
+.planta-zone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0);
+  transition: box-shadow .45s var(--ease);
+  pointer-events: none;
+}
+
+.planta-zone:hover,
+.planta-zone:focus-visible,
+.planta-zone.hint-active {
+  backdrop-filter: brightness(1.13) saturate(1.1);
+  -webkit-backdrop-filter: brightness(1.13) saturate(1.1);
+}
+.planta-zone:hover::before,
+.planta-zone:focus-visible::before,
+.planta-zone.hint-active::before { opacity: 1; }
+.planta-zone:hover::after,
+.planta-zone:focus-visible::after,
+.planta-zone.hint-active::after {
+  box-shadow: inset 0 0 0 1px rgba(200,168,116,.5), 0 0 30px 4px var(--gold-soft);
+}
+
+/* Punto discreto siempre presente: la única pista visible en reposo,
+   para que se sepa que la fachada es interactiva sin dibujar cajas. */
+@keyframes hint-dot-pulse {
+  0%, 100% { opacity: .4; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: .9; transform: translate(-50%, -50%) scale(1.25); }
+}
+.zone-hint-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px 2px var(--gold-soft);
+  pointer-events: none;
+  z-index: 2;
+  animation: hint-dot-pulse 2.6s ease-in-out infinite;
+  transition: opacity .3s var(--ease);
+}
+.planta-zone:hover .zone-hint-dot,
+.planta-zone:focus-visible .zone-hint-dot,
+.planta-zone.hint-active .zone-hint-dot,
+.planta-zone.popped .zone-hint-dot { opacity: 0; }
+
+/* Ya no hay etiqueta de esquina (PB/P1...) permanente: la propia
+   fachada + el micro-tooltip de abajo bastan como identificación. El
+   elemento lo sigue creando building.js por compatibilidad; se oculta
+   aquí para no añadir otra caja más a la pantalla. */
+.zone-badge { display: none; }
+
+/* Micro-tooltip al pasar el cursor por una planta -- pequeño, junto
+   al punto del cursor, no un bloque centrado grande. */
+.zone-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%) translateY(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  background: var(--glass-dark);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 0.5em 0.9em;
+  color: var(--white);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity .25s var(--ease), transform .25s var(--ease);
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+.planta-zone:hover .zone-label,
+.planta-zone:focus-visible .zone-label { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+
+/* --------- Selección: geometría resaltada, outline finísimo, sin
+   cajas ni sombras grandes --------- */
+.planta-zone.popped {
+  z-index: 5;
+  transform: scale(1.03) translateY(-1%);
+  backdrop-filter: brightness(1.08) saturate(1.05);
+  -webkit-backdrop-filter: brightness(1.08) saturate(1.05);
+  -webkit-mask-image: none;
+  mask-image: none; /* desplegada, ya no hace falta difuminar el borde */
+}
+.planta-zone.popped::before { opacity: .4; }
+.planta-zone.popped::after { box-shadow: inset 0 0 0 1px rgba(214,197,164,.75); }
+.planta-zone.popped .zone-label,
+.planta-zone.popped .zone-badge { display: none; }
+
+/* Las viviendas (crujías) de la planta desplegada, seleccionables una
+   a una. Sin líneas divisorias entre ellas -- sin "marco" A-B-C-D. */
+.unit-slices {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s var(--ease) .12s;
+}
+.planta-zone.popped .unit-slices { opacity: 1; pointer-events: auto; }
+
+.unit-slice {
+  flex: 1;
+  position: relative;
+  background: transparent;
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  padding: 0;
+  transition: backdrop-filter .3s var(--ease);
+}
+.unit-slice:hover, .unit-slice:focus-visible {
+  backdrop-filter: brightness(1.22) saturate(1.15);
+  -webkit-backdrop-filter: brightness(1.22) saturate(1.15);
+}
+
+/* Etiqueta contextual de la vivienda: invisible hasta el hover (nada
+   de letras sueltas siempre puestas encima de la foto). */
+.slice-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--glass-dark);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 0.5em 0.8em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s var(--ease), transform .2s var(--ease);
+  white-space: nowrap;
+}
+.unit-slice:hover .slice-label, .unit-slice:focus-visible .slice-label { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.slice-label-main { font-size: 0.78rem; letter-spacing: 0.06em; font-weight: 600; }
+.slice-label-sub { font-size: 0.62rem; letter-spacing: 0.04em; color: rgba(255,255,255,0.7); }
+.slice-label-estado { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-top: 0.1rem; }
+
+/* Portal de entrada: no es una vivienda, no se selecciona -- mismo
+   sitio en la crujía pero sin el brillo de "elígeme". */
+.unit-slice--entrada { cursor: default; }
+.unit-slice--entrada:hover, .unit-slice--entrada:focus-visible {
+  backdrop-filter: brightness(1.04);
+  -webkit-backdrop-filter: brightness(1.04);
+}
+.unit-slice--entrada .slice-label-main { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* =============================================================
+   PANEL LATERAL DE VIVIENDAS
+   ============================================================= */
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,8,5,0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s var(--ease);
+  z-index: 40;
+}
+.panel-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.side-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(460px, 100vw);
+  background: var(--cream);
+  z-index: 41;
+  padding: clamp(1.6rem, 4vw, 2.4rem);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .5s var(--ease);
+  box-shadow: -20px 0 50px rgba(0,0,0,0.25);
+}
+.side-drawer.open { transform: translateX(0); }
+
+/* =============================================================
+   PANEL CONTEXTUAL — compacto, flotante, reactivo. Reemplaza al
+   antiguo panel lateral ancho para la selección de planta/vivienda:
+   solo aparece con algo que mostrar, nunca ocupa media pantalla.
+   ============================================================= */
+.context-panel {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(1.1rem, 4vw, 1.8rem);
+  transform: translate(-50%, 0);
+  z-index: 32;
+  min-width: 240px;
+  max-width: min(380px, 92vw);
+  background: var(--glass-dark);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 1.1rem 1.3rem 1.2rem;
+  color: var(--cream);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
+}
+.context-panel.open { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+.context-panel-close {
+  position: absolute;
+  top: 0.6rem; right: 0.7rem;
+  background: none; border: none; color: rgba(255,255,255,0.5);
+  font-size: 0.75rem; cursor: pointer; padding: 0.3em;
+  transition: color .2s var(--ease);
+}
+.context-panel-close:hover { color: var(--gold); }
+
+.ctx-eyebrow {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+.ctx-summary { margin: 0 0 0.9rem; font-size: 0.85rem; color: rgba(255,255,255,0.85); }
+.ctx-specs { margin: 0; font-size: 1.05rem; font-weight: 300; color: var(--white); }
+.ctx-specs-sub { margin: 0.15rem 0 0.7rem; font-size: 0.76rem; color: rgba(255,255,255,0.6); }
+.ctx-price { margin: 0 0 0.9rem; font-size: 1.4rem; font-weight: 200; color: var(--gold); font-variant-numeric: tabular-nums; }
+.ctx-cta {
+  background: none; border: 1px solid rgba(255,255,255,0.28); color: var(--white);
+  padding: 0.55em 1rem; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  border-radius: 20px; cursor: pointer; transition: border-color .2s var(--ease), color .2s var(--ease);
+}
+.ctx-cta:hover { border-color: var(--gold); color: var(--gold); }
+.ctx-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.ctx-btn {
+  flex: 1; padding: 0.6em 0.5em; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+  border-radius: 20px; cursor: pointer; border: 1px solid rgba(255,255,255,0.28); background: none; color: var(--white);
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+}
+.ctx-btn:hover { border-color: var(--gold); color: var(--gold); }
+.ctx-btn--primary { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.ctx-btn--primary:hover { filter: brightness(1.08); color: var(--ink); }
+.ctx-amenities { margin: 0; padding-left: 1.1rem; font-size: 0.78rem; color: rgba(255,255,255,0.75); line-height: 1.7; }
+.estado-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 0.3em; }
+.estado-dot--disponible { background: #8fae7c; }
+.estado-dot--reservado { background: #d4a24c; }
+.estado-dot--vendido { background: #8a8a8a; }
+
+.panel-close {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0.4em 0;
+}
+.unit-plan-placeholder {
+  height: 110px;
+  border: 1px dashed var(--stone);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 0.8rem;
+}
+
+/* =============================================================
+   ONBOARDING — tarjetas interactivas tipo tutorial de videojuego,
+   sustituyen cualquier título/instrucción fija en la página.
+   ============================================================= */
+.onboarding {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(1.4rem, 6vw, 3.2rem);
+  transform: translateX(-50%) translateY(0) scale(1);
+  z-index: 25;
+  transition: opacity .4s var(--ease), transform .4s cubic-bezier(.34,1.56,.64,1);
+}
+.onboarding.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(18px) scale(0.94);
+}
+
+.onboarding-card {
+  width: min(400px, 88vw);
+  background: linear-gradient(165deg, #201b13, var(--ink) 60%);
+  color: var(--cream);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 1.5rem 1.6rem 1.2rem;
+  box-shadow: 0 30px 70px -15px rgba(0,0,0,0.65), 0 0 0 1px rgba(200,168,116,0.08);
+}
+
+.onboarding-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(200,168,116,0.14);
+  border: 1px solid rgba(200,168,116,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+  color: var(--gold);
+  transition: opacity .25s var(--ease), transform .25s var(--ease);
+}
+.onboarding-icon svg { width: 18px; height: 18px; }
+
+.onboarding-text {
+  margin: 0 0 1.2rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  min-height: 2.6em;
+  transition: opacity .22s var(--ease), transform .22s var(--ease);
+}
+.onboarding-fade .onboarding-icon,
+.onboarding-fade .onboarding-text { opacity: 0; transform: translateY(4px); }
+
+.onboarding-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.onboarding-dots { display: flex; gap: 0.4rem; }
+.onboarding-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: background .3s var(--ease), transform .3s var(--ease), width .3s var(--ease);
+}
+.onboarding-dots span.active { background: var(--gold); width: 16px; border-radius: 3px; }
+
+.onboarding-actions { display: flex; align-items: center; gap: 1rem; }
+.onboarding-skip {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  padding: 0.3em 0;
+  transition: color .25s var(--ease);
+}
+.onboarding-skip:hover { color: var(--white); }
+.onboarding-next {
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  padding: 0.6em 1.4em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: filter .25s var(--ease), transform .15s var(--ease);
+}
+.onboarding-next:hover { filter: brightness(1.12); }
+.onboarding-next:active { transform: scale(0.96); }
+
+/* Botón "?" flotante: reabre la guía una vez cerrada, sin dejar
+   texto permanente en la página. */
+.help-btn {
+  position: fixed;
+  right: clamp(1rem, 4vw, 2rem);
+  /* Encima del widget del asistente IA (también abajo a la derecha),
+     para que no se solapen. */
+  bottom: calc(clamp(1rem, 4vw, 2rem) + 64px);
+  z-index: 20;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--cream);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 30px -8px rgba(0,0,0,0.5);
+  transition: opacity .35s var(--ease), transform .25s var(--ease), background .25s var(--ease);
+}
+.help-btn:hover { background: var(--gold); color: var(--ink); transform: scale(1.06); }
+.help-btn.hidden { opacity: 0; pointer-events: none; transform: scale(0.8); }
+
+/* =============================================================
+   ROTA TU DISPOSITIVO — overlay a pantalla completa, solo móvil +
+   vertical (JS decide cuándo mostrarlo, ver updateRotateOverlay()).
+   ============================================================= */
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2rem, 10vh, 3.5rem);
+  transition: opacity .4s var(--ease);
+}
+.rotate-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.rotate-brand {
+  position: absolute;
+  top: clamp(1.4rem, 6vw, 2.2rem);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--white);
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rotate-brand span { color: var(--gold); font-weight: 400; }
+
+.rotate-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+  padding: 0 2rem;
+}
+
+.rotate-icon {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  color: var(--gold);
+}
+.rotate-icon svg:first-child {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: rotate-phone 2.4s ease-in-out infinite;
+}
+.rotate-arrow {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 22px;
+  height: 22px;
+  color: rgba(200,168,116,0.7);
+  animation: rotate-arrow-spin 2.4s ease-in-out infinite;
+}
+@keyframes rotate-phone {
+  0%, 15%   { transform: rotate(0deg); }
+  55%, 100% { transform: rotate(-90deg); }
+}
+@keyframes rotate-arrow-spin {
+  0%, 15%   { opacity: 0; transform: rotate(0deg); }
+  30%       { opacity: 1; }
+  55%, 80%  { opacity: 1; transform: rotate(70deg); }
+  100%      { opacity: 0; transform: rotate(70deg); }
+}
+
+.rotate-text {
+  margin: 0;
+  color: var(--cream);
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+}
+.rotate-hint {
+  margin: -0.8rem 0 0;
+  max-width: 280px;
+  color: var(--stone);
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+}
+
+/* =============================================================
+   TUTORIAL INTERACTIVO — onboarding tipo videojuego SOBRE la
+   interfaz real (no una pantalla aparte). El fondo se atenúa muy
+   levemente y de forma puramente visual: overlay y spotlight son
+   pointer-events:none siempre, así que un paso que pide "haz clic en
+   la planta" nunca bloquea ese clic real. Solo la tarjeta y el botón
+   "Saltar" capturan clics (son lo único con pointer-events:auto).
+   ============================================================= */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+.tutorial-spotlight {
+  position: fixed;
+  left: 0; top: 0; width: 0; height: 0;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: left .4s var(--ease), top .4s var(--ease), width .4s var(--ease), height .4s var(--ease), border-radius .4s var(--ease), opacity .3s var(--ease);
+}
+.tutorial-spotlight.visible { opacity: 1; }
+/* Sin target (bienvenida / cierre): oscurece la pantalla entera, uniforme. */
+.tutorial-spotlight.full {
+  left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important;
+  border-radius: 0 !important;
+  background: rgba(0,0,0,0.25);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.tutorial-skip {
+  position: fixed;
+  /* Debajo de #top-actions (Comparar / Contacto), que ocupa esa misma
+     esquina -- si no, "Saltar visita" queda tapado/confundido con
+     "Contacto" y parece que no existe. */
+  top: clamp(3.4rem, 8vw, 4.1rem);
+  right: clamp(1.3rem, 3vw, 1.8rem);
+  z-index: 92;
+  pointer-events: auto;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  text-shadow: none;
+  cursor: pointer;
+  padding: 0.5em 1em;
+  transition: color .2s var(--ease), border-color .2s var(--ease);
+}
+.tutorial-skip:hover { color: var(--white); border-color: rgba(255,255,255,0.5); }
+
+.tutorial-card {
+  position: fixed;
+  z-index: 91;
+  pointer-events: auto;
+  width: min(300px, 84vw);
+  background: var(--glass-dark);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 1.2rem 1.35rem 1.35rem;
+  color: var(--cream);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .35s var(--ease), transform .35s var(--ease), left .4s var(--ease), top .4s var(--ease);
+}
+.tutorial-overlay:not(.hidden) .tutorial-card { opacity: 1; transform: translateY(0); }
+.tutorial-overlay:not(.hidden) .tutorial-card.tutorial-card--fade { opacity: 0; transform: translateY(6px); }
+.tutorial-card--center {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(340px, 86vw);
+  text-align: center;
+}
+.tutorial-overlay:not(.hidden) .tutorial-card--center { transform: translate(-50%, -50%) !important; }
+/* Móvil / táctil (isMobileDevice() en tutorial.js): bottom-sheet en
+   vez de tarjeta flotante junto al elemento -- no hay hover que
+   perseguir, y así nunca tapa el edificio. */
+.tutorial-card--sheet {
+  left: 0.9rem !important;
+  right: 0.9rem;
+  bottom: 1.1rem;
+  top: auto !important;
+  width: auto;
+}
+.tutorial-card--sheet.tutorial-card--center { left: 50% !important; right: auto; top: 50% !important; bottom: auto; }
+
+.tutorial-progress { display: flex; gap: 0.3rem; margin-bottom: 0.7rem; }
+.tutorial-progress span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background .2s var(--ease); }
+.tutorial-progress span.active { background: var(--gold); }
+
+.tutorial-eyebrow {
+  display: block;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+.tutorial-title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+.tutorial-text {
+  margin: 0 0 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.8);
+}
+.tutorial-card--center .tutorial-text { margin-bottom: 1.2rem; }
+.tutorial-note {
+  margin: -0.6rem 0 1rem;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.45);
+}
+.tutorial-hint {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.tutorial-hint li {
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.65);
+  font-style: italic;
+}
+
+.tutorial-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.tutorial-card--center .tutorial-actions { justify-content: center; }
+.tutorial-btn {
+  padding: 0.55em 1.1em;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.8);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+}
+.tutorial-btn:hover { border-color: var(--gold); color: var(--gold); }
+.tutorial-btn--primary { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.tutorial-btn--primary:hover { filter: brightness(1.08); color: var(--ink); }
+
+.tutorial-confirm {
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  padding: 0.4rem 0;
+  animation: tutorialConfirmPop .35s var(--ease);
+}
+@keyframes tutorialConfirmPop {
+  0% { opacity: 0; transform: scale(0.85); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Pulso sutil sobre el elemento REAL que se está enseñando (no un
+   rectángulo aparte) -- funciona igual para una franja del edificio
+   que para un botón de la interfaz. */
+.tutorial-target-pulse { animation: tutorialTargetPulse 1.6s ease-in-out infinite; }
+@keyframes tutorialTargetPulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(214,197,164,0)); }
+  50% { filter: brightness(1.08) drop-shadow(0 0 10px rgba(214,197,164,0.55)); }
+}
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
+@media (max-width: 720px) {
+  .btn-ingresar { bottom: 10%; padding: 1em 2.2em; font-size: 0.85rem; }
+  .nav-brand { font-size: 0.64rem; letter-spacing: 0.2em; }
+  .explore-hint { bottom: 4.6rem; }
+  .app-sidebar { left: 0.5rem; }
+  .floor-selector { right: 0.6rem; }
+  .side-drawer {
+    width: 100%;
+    top: auto;
+    height: 88vh;
+    border-radius: 12px 12px 0 0;
+    transform: translateY(100%);
+  }
+  .side-drawer.open { transform: translateY(0); }
+  .zone-label { font-size: 0.62rem; }
+  .context-panel { width: calc(100vw - 2rem); max-width: none; }
+
+  /* El resto de overlays nuevos siguen el mismo criterio que
+     .side-drawer en móvil: pantalla completa / bottom-sheet, nunca
+     una landing vertical -- el edificio sigue siendo el protagonista
+     detrás. */
+  .comparator-panel, .contact-modal-panel {
+    width: 100%;
+    max-height: 92vh;
+  }
+  .compare-table th, .compare-table td { padding: 0.6em 0.6em; font-size: 0.78rem; }
+  .ai-window { width: 100%; height: 100%; right: 0; bottom: 0; border-radius: 0; }
+  .ai-widget-text { display: none; }
+  .view-controls { left: 0.6rem; bottom: 0.6rem; }
+  .sel-filters { grid-template-columns: 1fr; }
+  .top-actions { top: 1rem; right: 1rem; gap: 0.5rem; }
+
+  .tutorial-skip { top: 3.1rem; right: 0.9rem; }
+}

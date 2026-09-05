@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Serra Residencial — Viviendas frente al mar</title>
+<meta name="description" content="Serra Residencial — el edificio, planta a planta. Explora, compara y descubre tu vivienda.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============================================================
+     CARGA — se cierra en cuanto intro.mp4 puede reproducirse sin
+     cortes (o a los 4s como máximo, red de seguridad). Ver app.js.
+     ============================================================ -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-brand">SERRA <span>RESIDENCIAL</span></div>
+  <p class="loading-caption">Cargando experiencia</p>
+  <div id="loading-percent" class="loading-percent">0%</div>
+</div>
+
+<!-- ============================================================
+     PANTALLA 1 — INTRO: vídeo de fondo en bucle + botón INGRESAR
+     ============================================================ -->
+<section id="intro-screen" class="stage">
+  <video id="intro-video" class="stage-video" autoplay muted loop playsinline
+         preload="auto" disablepictureinpicture src="intro.mp4"></video>
+  <div class="intro-overlay"></div>
+  <button id="btn-ingresar" class="btn-ingresar">Ingresar</button>
+</section>
+
+<!-- ============================================================
+     PANTALLA 2 — DESCENSO: una sola pasada, sin controles, no saltable
+     ============================================================ -->
+<section id="descenso-screen" class="stage hidden">
+  <!-- Sin src fijo: script.js elige descenso.mp4 (horizontal, PC) o
+       vertical.mp4 (móvil) nada más cargar la página, según
+       dispositivo, y lo precarga desde ese momento. -->
+  <video id="descenso-video" class="stage-video" muted playsinline
+         preload="auto" disablepictureinpicture></video>
+  <button id="btn-skip-intro" class="btn-skip-intro">Omitir intro ⏭</button>
+</section>
+
+<!-- Capa de fundido reutilizable: se usa DOS veces con imágenes
+     distintas -- primero fachada.webp (fondo fijo tras el vídeo 1,
+     detrás de los popups) y luego frente.webp (fondo tras el vídeo 2,
+     ya la vista interactiva final). script.js cambia el src antes de
+     cada fundido. -->
+<div id="fachada-fade" class="stage hidden">
+  <img id="fachada-fade-img" src="fachada.webp" alt="" class="stage-img">
+  <!-- Brillo de bienvenida: ilumina el edificio entero una sola vez,
+       sincronizado con el primer popup de la guía. Solo tiene sentido
+       sobre fachada.webp (aérea), que es lo que hay debajo la primera
+       vez que aparece. -->
+  <div id="building-glow" class="building-glow"></div>
+</div>
+
+<!-- ============================================================
+     PANTALLA 2b — VÍDEO DE FRENTE: tras cerrar la guía, antes de la
+     vista interactiva final. Mismo patrón que el descenso: una sola
+     pasada, sin controles, con su propio "Omitir".
+     ============================================================ -->
+<section id="frente-video-screen" class="stage hidden">
+  <video id="frente-video" class="stage-video" muted playsinline
+         preload="auto" disablepictureinpicture src="frente-video.mp4"></video>
+  <button id="btn-skip-frente" class="btn-skip-intro">Omitir intro ⏭</button>
+</section>
+
+<!-- ============================================================
+     IDENTIDAD — arriba a la izquierda. Una línea, discreta, nada de
+     bloque de branding. Sin ubicación, sin ciudad, sin "promoción".
+     ============================================================ -->
+<header id="site-nav" class="site-nav hidden">
+  <span class="nav-brand">SERRA RESIDENCIAL</span>
+</header>
+
+<!-- Acciones superiores derechas: comparar (solo con 2+ elegidas) y
+     contacto. Discretas, sin texto salvo el número. -->
+<div id="top-actions" class="top-actions hidden">
+  <button id="compare-indicator" class="compare-indicator hidden">Comparar · <span id="compare-count">0</span></button>
+  <button id="top-contact-btn" class="top-action-btn">Contacto</button>
+</div>
+
+<!-- ============================================================
+     INTRODUCCIÓN MÍNIMA — sustituye al hero grande. Desaparece en
+     cuanto el usuario interactúa con el edificio (ver building.js).
+     ============================================================ -->
+<div id="explore-hint" class="explore-hint hidden">
+  <span class="explore-hint-title">Explora el edificio</span>
+  <span class="explore-hint-sub">Selecciona una planta</span>
+</div>
+
+<!-- ============================================================
+     CONTROLES DE VISTA — botones individuales, mínimos. No hay motor
+     3D real (es la foto + recorte con foco de building.js), así que
+     no hay "rotar": solo lo que existe de verdad.
+     ============================================================ -->
+<div id="view-controls" class="view-controls hidden" data-tutorial="viewer-controls">
+  <button id="view-zoom-out" class="view-btn" aria-label="Alejar" title="Alejar">－</button>
+  <button id="view-reset" class="view-btn" aria-label="Centrar" title="Centrar">⟲</button>
+  <button id="view-zoom-in" class="view-btn" aria-label="Acercar" title="Acercar">＋</button>
+  <button id="view-fullscreen" class="view-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+</div>
+
+<!-- ============================================================
+     SELECTOR DE PLANTAS — flotante, junto al edificio. Secundario:
+     el mecanismo principal es pasar el cursor por el propio edificio
+     (ver building.js). Se genera desde PLANTAS + ROOFTOP.
+     ============================================================ -->
+<div id="floor-selector" class="floor-selector hidden">
+  <span class="floor-selector-title">Plantas</span>
+  <div id="floor-selector-list" class="floor-selector-list"></div>
+</div>
+
+<!-- ============================================================
+     SIDEBAR — riel ultrafino, iconos + micro-label. Se expande al
+     pasar el cursor por cada punto; el botón superior fija el panel
+     completo abierto (ver #sidebar-panel).
+     ============================================================ -->
+<nav id="app-sidebar" class="app-sidebar hidden" aria-label="Navegación" data-tutorial="sidebar">
+  <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Abrir menú" title="Menú">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+  </button>
+  <ul class="sidebar-list">
+    <li><button class="sidebar-item" data-section="explorar" title="Explorar edificio"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 21V9l8-6 8 6v12" stroke-linejoin="round"/><path d="M9 21v-7h6v7"/></svg></span><span class="sidebar-label">Explorar</span></button></li>
+    <li><button class="sidebar-item" data-section="viviendas" title="Viviendas"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="4" width="14" height="16" rx="1"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h6"/></svg></span><span class="sidebar-label">Viviendas</span></button></li>
+    <li><button class="sidebar-item" data-section="comparador" data-tutorial="compare" title="Comparador"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4v16M16 4v16" stroke-linecap="round"/><path d="M5 8h6M13 16h6" stroke-linecap="round"/></svg></span><span class="sidebar-label">Comparador</span></button></li>
+    <li><button class="sidebar-item" data-section="planos" title="Planos"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 4v16"/></svg></span><span class="sidebar-label">Planos</span></button></li>
+    <li><button class="sidebar-item" data-section="promocion" title="La promoción"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="8.2"/><path d="M12 11v5.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="sidebar-label">Promoción</span></button></li>
+    <li><button class="sidebar-item" data-section="calidades" title="Calidades"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3l3 6 6 .9-4.5 4.2 1 6-5.5-3-5.5 3 1-6L3 9.9 9 9z" stroke-linejoin="round"/></svg></span><span class="sidebar-label">Calidades</span></button></li>
+    <li><button class="sidebar-item" data-section="financiacion" title="Financiación"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 10h16M8 14h.01M12 14h.01M16 14h4" stroke-linecap="round"/></svg></span><span class="sidebar-label">Financiación</span></button></li>
+    <li><button class="sidebar-item" data-section="asistente" title="Asistente"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.8 2.8M15.2 15.2 18 18M18 6l-2.8 2.8M8.8 15.2 6 18" stroke-linecap="round"/></svg></span><span class="sidebar-label">Asistente</span></button></li>
+    <li><button class="sidebar-item" data-section="contacto" title="Contacto"><span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="M4.5 7l7.5 6 7.5-6" stroke-linejoin="round"/></svg></span><span class="sidebar-label">Contacto</span></button></li>
+  </ul>
+  <button type="button" id="sidebar-restart-tutorial" class="sidebar-restart-tutorial">Repetir visita guiada</button>
+  <div class="sidebar-footer">SERRA RESIDENCIAL <span>2026</span></div>
+</nav>
+
+<!-- ============================================================
+     CONTENIDO PRINCIPAL — el edificio a pantalla completa, sin
+     márgenes ni secciones adicionales. Todo lo demás (guía, detalle
+     de vivienda) vive en tarjetas flotantes por encima.
+     ============================================================ -->
+<main id="main-content" class="hidden">
+  <section id="plantas" class="plantas-section">
+    <div id="fachada-wrap" class="fachada-wrap">
+      <!-- Vista interactiva final: la fachada de FRENTE (no la aérea),
+           que es donde viven las plantas seleccionables. -->
+      <img src="frente.webp" alt="Fachada frontal de Serra Residencial" class="fachada-img">
+      <!-- Los botones de cada planta se generan por JS a partir de
+           PLANTAS (script.js), para no repetir 6 bloques a mano. -->
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     PANEL CONTEXTUAL — compacto, flotante, reactivo. Vacío y oculto
+     hasta que hay algo que mostrar (planta o vivienda seleccionada);
+     nunca ocupa media pantalla. Ver unit-panel.js.
+     ============================================================ -->
+<div id="context-panel" class="context-panel" aria-hidden="true" data-tutorial="property-info">
+  <button id="context-panel-close" class="context-panel-close" aria-label="Cerrar">✕</button>
+  <div id="context-panel-body"></div>
+</div>
+
+<!-- ============================================================
+     DRAWER GENÉRICO — contenido de Viviendas/Comparador/Planos/La
+     promoción/Ubicación/Calidades/Financiación. Cada sección registra
+     su render en SECTION_RENDERERS (nav-shell.js); el drawer en sí
+     no sabe nada del contenido, solo lo aloja.
+     ============================================================ -->
+<div id="section-drawer-backdrop" class="panel-backdrop"></div>
+<aside id="section-drawer" class="side-drawer section-drawer" aria-hidden="true">
+  <button id="section-drawer-close" class="panel-close" aria-label="Cerrar">✕ Cerrar</button>
+  <div id="section-drawer-body" class="section-drawer-body"></div>
+</aside>
+
+<!-- ============================================================
+     COMPARADOR — el indicador vive en #top-actions (arriba a la
+     derecha); aquí solo el overlay con la tabla (ver comparator.js).
+     ============================================================ -->
+<div id="comparator-overlay" class="comparator-overlay" aria-hidden="true">
+  <div class="comparator-panel">
+    <button id="comparator-close" class="panel-close" aria-label="Cerrar">✕ Cerrar</button>
+    <h2 class="drawer-title">Comparador</h2>
+    <p class="drawer-subtitle">Hasta 3 viviendas, lado a lado.</p>
+    <div id="comparator-body"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ONBOARDING — guía interactiva tipo videojuego, en tarjetas con
+     "Siguiente" en vez de texto fijo en la página.
+     ============================================================ -->
+<div id="onboarding" class="onboarding hidden">
+  <div class="onboarding-card">
+    <div id="onboarding-icon" class="onboarding-icon"></div>
+    <p id="onboarding-text" class="onboarding-text"></p>
+    <div class="onboarding-footer">
+      <div id="onboarding-dots" class="onboarding-dots"></div>
+      <div class="onboarding-actions">
+        <button id="onboarding-skip" class="onboarding-skip">Saltar</button>
+        <button id="onboarding-next" class="onboarding-next">Siguiente</button>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="help-btn" class="help-btn hidden" aria-label="Ver guía">?</button>
+
+<!-- ============================================================
+     TUTORIAL INTERACTIVO — onboarding tipo videojuego SOBRE la
+     interfaz ya visible (no una pantalla aparte). Avanza con
+     acciones reales del usuario cuando es posible (hover/clic real
+     sobre el edificio), no a base de "Siguiente". Se puede saltar en
+     cualquier momento. Ver tutorial.js.
+     ============================================================ -->
+<div id="tutorial-overlay" class="tutorial-overlay hidden" aria-hidden="true">
+  <div id="tutorial-spotlight" class="tutorial-spotlight"></div>
+  <button id="tutorial-skip" class="tutorial-skip">Saltar visita</button>
+  <div id="tutorial-card" class="tutorial-card"></div>
+</div>
+
+<!-- ============================================================
+     CONTACTO — modal corto, no formulario largo. Se autorrellena con
+     la vivienda activa si el usuario venía de una ficha concreta.
+     ============================================================ -->
+<div id="contact-modal-backdrop" class="panel-backdrop"></div>
+<div id="contact-modal" class="contact-modal-overlay" aria-hidden="true">
+  <div class="contact-modal-panel">
+    <button id="contact-modal-close" class="panel-close" aria-label="Cerrar">✕ Cerrar</button>
+    <h2 class="drawer-title">Solicitar información</h2>
+    <p class="drawer-subtitle">Respuesta rápida, sin compromiso.</p>
+    <form id="contact-form" class="contact-form-short">
+      <label><span>Nombre</span><input type="text" name="nombre" placeholder="Tu nombre" required></label>
+      <label><span>Teléfono</span><input type="tel" name="telefono" placeholder="+34 600 000 000"></label>
+      <label><span>Email</span><input type="email" name="email" placeholder="tu@email.com" required></label>
+      <label><span>Vivienda de interés</span>
+        <select id="contact-unit" name="vivienda"></select>
+      </label>
+      <div class="contact-form-actions">
+        <button type="submit" id="contact-submit" class="btn-request">Quiero más información</button>
+        <button type="button" id="contact-call-btn" class="btn-compare">Solicitar llamada</button>
+      </div>
+    </form>
+    <p id="contact-success" class="form-success hidden"></p>
+  </div>
+</div>
+
+<!-- ============================================================
+     ASISTENTE SERRA — widget flotante inferior derecho. Mock por
+     palabras clave (ai-concierge.js), sin API ni claves reales.
+     ============================================================ -->
+<div id="ai-widget" class="ai-widget">
+  <span class="ai-widget-text">Preguntar a Serra</span>
+  <button id="ai-widget-btn" class="ai-widget-btn" aria-label="Preguntar a Serra" data-tutorial="ai">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.2 6.2l2.6 2.6M15.2 15.2l2.6 2.6M17.8 6.2l-2.6 2.6M8.8 15.2l-2.6 2.6" stroke-linecap="round"/></svg>
+  </button>
+</div>
+<div id="ai-window" class="ai-window" aria-hidden="true">
+  <div class="ai-window-header">
+    <div>
+      <span class="ai-window-title">SERRA</span>
+      <span class="ai-window-subtitle">Asistente de vivienda</span>
+    </div>
+    <button id="ai-close" class="panel-close" aria-label="Cerrar">✕</button>
+  </div>
+  <p class="ai-window-intro">¿Qué estás buscando?</p>
+  <div id="ai-messages" class="ai-messages"></div>
+  <div id="ai-suggestions" class="ai-suggestions"></div>
+  <form id="ai-form" class="ai-form">
+    <input id="ai-input" type="text" placeholder="Pregunta sobre la promoción…" autocomplete="off">
+    <button type="submit" aria-label="Enviar">→</button>
+  </form>
+</div>
+
+<!-- ============================================================
+     ROTA TU DISPOSITIVO — solo en móvil + vertical (ver
+     updateRotateOverlay() en script.js). En horizontal y en
+     escritorio nunca aparece; las imágenes/vídeos son siempre los
+     mismos, horizontales, en todos los casos.
+     ============================================================ -->
+<div id="rotate-overlay" class="rotate-overlay hidden">
+  <div class="rotate-brand">SERRA <span>RESIDENCIAL</span></div>
+  <div class="rotate-content">
+    <div class="rotate-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="6.5" y="3" width="11" height="18" rx="2"/>
+        <line x1="10.3" y1="18.2" x2="13.7" y2="18.2" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <svg class="rotate-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M19 5a9 9 0 1 1-6.4-2.6" stroke-linecap="round"/>
+        <path d="M19 1.5V6h-4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <p class="rotate-text">Para una mejor experiencia,<br>gira tu dispositivo</p>
+    <p class="rotate-hint">Si no gira solo, activa la rotación automática de la pantalla en los ajustes de tu móvil.</p>
+  </div>
+</div>
+
+<!-- Scripts clásicos (no ES modules: el sitio se abre con doble clic,
+     por file://, y los módulos fallan ahí por CORS). El orden importa
+     -- cada archivo solo asume que lo anterior ya se ha ejecutado. -->
+<script src="js/utils.js"></script>
+<script src="js/data.js"></script>
+<script src="js/intro-sequence.js"></script>
+<script src="js/building.js"></script>
+<script src="js/unit-panel.js"></script>
+<script src="js/onboarding.js"></script>
+<script src="js/nav-shell.js"></script>
+<script src="js/selector.js"></script>
+<script src="js/comparator.js"></script>
+<script src="js/calculator.js"></script>
+<script src="js/contact-modal.js"></script>
+<script src="js/ai-concierge.js"></script>
+<script src="js/promo-panels.js"></script>
+<script src="js/tutorial.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

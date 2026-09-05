@@ -1,0 +1,53 @@
+# =================================================================
+# Configuración de Netlify — Serra Residencial
+# -----------------------------------------------------------------
+# La web es estática: no hay build ni dependencias que instalar.
+# Netlify publica el contenido de la raíz del repositorio tal cual.
+# =================================================================
+
+[build]
+  publish = "."
+  command = ""
+
+# -----------------------------------------------------------------
+# Caché
+# -----------------------------------------------------------------
+# El HTML nunca se cachea, para que al hacer cambios se vean al
+# instante. Los vídeos, imágenes y panorámicas sí se cachean a saco:
+# son los archivos pesados y no cambian de nombre.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/showroom/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# El CSS y el JS sí conviene revalidarlos: cambian a menudo y no
+# llevan hash en el nombre.
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

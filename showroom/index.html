@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Serra Residencial — Visita 360</title>
+<meta name="description" content="Recorre la vivienda estancia por estancia en 360°.">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap">
+
+<!-- Estilos de Photo Sphere Viewer + los del showroom -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.15.1/index.css">
+<link rel="stylesheet" href="tour.css">
+
+<!--
+  Photo Sphere Viewer 5 solo se publica como módulos ES (no hay build
+  UMD), así que se carga con un importmap. Esto NO es un build step:
+  siguen siendo archivos sueltos servidos tal cual.
+
+  IMPORTANTE: por esto y por WebGL, esta página necesita http://
+  (no funciona con doble clic sobre el archivo). Ver README.md.
+-->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.module.js",
+    "@photo-sphere-viewer/dual-fisheye-adapter": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/dual-fisheye-adapter@5.15.1/index.module.js",
+    "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.module.js",
+    "@photo-sphere-viewer/virtual-tour-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.15.1/index.module.js",
+    "@photo-sphere-viewer/autorotate-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/autorotate-plugin@5.15.1/index.module.js",
+    "@photo-sphere-viewer/gyroscope-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/gyroscope-plugin@5.15.1/index.module.js"
+  }
+}
+</script>
+
+<style>
+  html, body { margin: 0; height: 100%; background: #1a1815; }
+  #showroom { width: 100vw; height: 100dvh; }
+  .sr-fatal {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 2rem; text-align: center; color: #f4f1ec; background: #1a1815;
+    font-family: 'Inter', system-ui, sans-serif; line-height: 1.6;
+  }
+  .sr-fatal code {
+    display: inline-block; margin-top: .5rem; padding: .4em .7em; border-radius: 6px;
+    background: rgba(255,255,255,.1); font-family: Consolas, monospace; font-size: .85rem;
+  }
+  .sr-fatal h2 { font-weight: 400; letter-spacing: .04em; margin: 0 0 .6rem; }
+  .sr-fatal p { margin: 0 0 .4rem; color: rgba(244,241,236,.7); font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<div id="showroom"></div>
+
+<script type="module">
+  import { initShowroom } from './tour.js';
+
+  const container = document.getElementById('showroom');
+
+  // Abrir el archivo con doble clic (file://) no puede funcionar: ni los
+  // módulos ES ni las texturas WebGL locales pasan el control de origen
+  // del navegador. Mejor decirlo claro que dejar una pantalla en negro.
+  if (location.protocol === 'file:') {
+    container.innerHTML = `
+      <div class="sr-fatal">
+        <div>
+          <h2>Esta visita necesita un servidor local</h2>
+          <p>El navegador bloquea las texturas 360 y los módulos cuando la página se abre con doble clic.</p>
+          <p>Desde la carpeta <b>web/</b> ejecuta:</p>
+          <code>node showroom/serve.js</code>
+          <p style="margin-top:.8rem">y abre <b>http://localhost:8080/showroom/</b></p>
+        </div>
+      </div>`;
+  } else {
+    // ?vivienda=demo  ·  la clave debe existir en tour.config.js
+    const vivienda = new URLSearchParams(location.search).get('vivienda');
+    try {
+      window.showroom = initShowroom(container, vivienda);
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = `<div class="sr-fatal"><div>
+        <h2>No se ha podido cargar la visita</h2>
+        <p>${err.message}</p>
+      </div></div>`;
+    }
+  }
+</script>
+
+</body>
+</html>
