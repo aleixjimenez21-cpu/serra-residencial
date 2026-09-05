@@ -46,31 +46,38 @@ btnSkipIntro.addEventListener('click', () => {
   revealFachadaBackdrop();
 });
 
+let descensoWatchdog = null;
+
 function startDescenso() {
   btnIngresar.classList.add('fading');
   introScreen.classList.add('fading-out');
 
-  const play = () => {
-    descensoScreen.classList.remove('hidden');
-    requestAnimationFrame(() => descensoScreen.classList.add('visible'));
-    descensoVideo.currentTime = 0;
-    ajustarVelocidadDescenso(); // por si el metadata llegó antes del listener
-    const p = descensoVideo.play();
-    // Si el navegador bloquea el autoplay por algún motivo, no nos
-    // quedamos colgados: pasamos directo al siguiente paso.
-    if (p && p.catch) p.catch(() => revealFachadaBackdrop());
-    setTimeout(() => introScreen.classList.add('hidden'), 900);
-  };
+  descensoScreen.classList.remove('hidden');
+  requestAnimationFrame(() => descensoScreen.classList.add('visible'));
+  setTimeout(() => introScreen.classList.add('hidden'), 900);
 
-  // Ya se ha estado precargando desde que se fijó el src (arriba) y el
-  // preload="auto" del <video>; si aún no tiene suficiente buffer,
-  // esperamos a canplaythrough en vez de arrancar con tirones.
-  if (descensoVideo.readyState >= 3) {
-    play();
-  } else {
-    descensoVideo.addEventListener('canplaythrough', play, { once: true });
-  }
+  // play() TIENE que ejecutarse dentro del gesto del usuario. El móvil
+  // ignora preload="auto" y no descarga un byte del vídeo hasta que se
+  // le pide reproducir: esperar a 'canplaythrough' antes de llamar a
+  // play() dejaba la pantalla colgada para siempre, y además sacaba la
+  // llamada fuera del gesto, con lo que iOS la habría bloqueado.
+  descensoVideo.currentTime = 0;
+  ajustarVelocidadDescenso();
+  const p = descensoVideo.play();
+  if (p && p.catch) p.catch(() => revealFachadaBackdrop());
+
+  // Red de seguridad: si a los 4s el vídeo sigue sin avanzar (conexión
+  // muy lenta, códec no soportado, autoplay denegado sin lanzar error),
+  // se continúa igualmente en vez de dejar al usuario en una pantalla
+  // muerta.
+  clearTimeout(descensoWatchdog);
+  descensoWatchdog = setTimeout(() => {
+    if (descensoVideo.currentTime < 0.1) revealFachadaBackdrop();
+  }, 4000);
 }
+
+// Si el vídeo falla al cargar, seguir adelante en vez de bloquearse.
+descensoVideo.addEventListener('error', () => revealFachadaBackdrop());
 
 descensoVideo.addEventListener('ended', () => {
   // Al pausar sin hacer seek, el vídeo se queda mostrando su último
@@ -82,7 +89,15 @@ descensoVideo.addEventListener('ended', () => {
 // Paso A: fundido del vídeo 1 a fachada.webp (aérea), que se queda de
 // fondo FIJO detrás de los popups de la guía (no es la vista
 // interactiva final, esa llega después del vídeo 2).
+let fachadaBackdropShown = false;
+
 function revealFachadaBackdrop() {
+  // Puede llegar por cuatro sitios (fin del vídeo, botón "Omitir",
+  // error de carga y watchdog): que solo entre una vez.
+  if (fachadaBackdropShown) return;
+  fachadaBackdropShown = true;
+  clearTimeout(descensoWatchdog);
+
   fachadaFadeImg.src = 'fachada.webp';
   fachadaFade.classList.remove('hidden');
   requestAnimationFrame(() => fachadaFade.classList.add('visible'));

@@ -43,7 +43,11 @@ img, video { display: block; max-width: 100%; }
   position: fixed;
   inset: 0;
   width: 100vw;
+  /* 100vh en móvil NO descuenta la barra del navegador: el fondo de la
+     pantalla queda por debajo de ella y lo que se coloque abajo (el
+     botón Ingresar) no se ve. dvh sí sigue la altura real visible. */
   height: 100vh;
+  height: 100dvh;
   background: var(--ink);
   overflow: hidden;
   z-index: 10;
@@ -1636,7 +1640,9 @@ img, video { display: block; max-width: 100%; }
    RESPONSIVE
    ============================================================= */
 @media (max-width: 720px) {
-  .btn-ingresar { bottom: 10%; padding: 1em 2.2em; font-size: 0.85rem; }
+  /* Más arriba en vertical: deja aire por encima de la barra del
+     navegador aunque esta aparezca y desaparezca al hacer scroll. */
+  .btn-ingresar { bottom: 20%; padding: 1em 2.2em; font-size: 0.85rem; }
   .nav-brand { font-size: 0.64rem; letter-spacing: 0.2em; }
   .explore-hint { bottom: 4.6rem; }
   .app-sidebar { left: 0.5rem; }
