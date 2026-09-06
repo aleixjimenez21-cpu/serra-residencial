@@ -1282,6 +1282,13 @@ img, video { display: block; max-width: 100%; }
   transition: opacity .3s var(--ease), transform .3s var(--ease);
 }
 .context-panel.open { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+/* Posición alternativa cuando abajo taparía las viviendas de la planta
+   abierta (ver colocarPanelSinTapar en unit-panel.js). Arriba solo hay
+   cielo en el render: no se pisa nada clicable. */
+.context-panel.arriba {
+  bottom: auto;
+  top: clamp(4.4rem, 10vh, 5.8rem);
+}
 .context-panel-close {
   position: absolute;
   top: 0.6rem; right: 0.7rem;
@@ -1802,7 +1809,24 @@ img, video { display: block; max-width: 100%; }
    lateral no cabe y los paneles se comen la pantalla.
    ============================================================= */
 @media (max-height: 540px) {
-  .context-panel { padding: 0.8rem 1rem 0.9rem; max-width: min(330px, 74vw); }
+  /* Con 390px de alto, cada píxel de alto de la ficha es una franja de
+     edificio tapada: aquí va lo más compacta posible, para que el
+     salto arriba/abajo tenga banda libre donde caber. */
+  .context-panel { padding: 0.7rem 0.95rem 0.8rem; max-width: min(330px, 74vw); }
+  /* Arriba, pegada al borde: con tan poco alto, cada píxel que baje la
+     ficha es una planta que deja de poder pulsarse. */
+  .context-panel.arriba { top: 3.1rem; }
+  .ctx-eyebrow { margin-bottom: 0.25rem; font-size: 0.6rem; }
+  .ctx-specs { font-size: 0.92rem; }
+  .ctx-specs-sub { font-size: 0.68rem; margin: 0.1rem 0 0.4rem; }
+  .ctx-summary { margin-bottom: 0.45rem; font-size: 0.78rem; }
+  .ctx-btn { padding: 0.38em 0.72em; font-size: 0.63rem; }
+  .ctx-actions { gap: 0.35rem; }
+  .ctx-amenities { font-size: 0.7rem; line-height: 1.5; }
+
+  /* El texto del widget del asistente lo ensancha hasta meterse sobre
+     la fachada, y tapaba la vivienda de la derecha. Solo el círculo. */
+  .ai-widget-text { display: none; }
   .ctx-price { font-size: 1.15rem; margin-bottom: 0.6rem; }
   .ctx-summary, .ctx-specs { margin-bottom: 0.5rem; }
   .ctx-btn { padding: 0.45em 0.85em; font-size: 0.68rem; }

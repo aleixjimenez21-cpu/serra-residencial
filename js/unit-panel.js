@@ -14,18 +14,58 @@ const contextPanelClose = document.getElementById('context-panel-close');
 // contact-modal.js lo usan para autorellenar precio/vivienda.
 let currentViewedUnitId = null;
 
+// La ficha vive abajo en el centro, que es donde mejor queda. El
+// problema es la planta baja: sus crujías caen justo ahí y quedaban
+// debajo de la tarjeta, sin poder pulsarse. En vez de mover el
+// edificio, se mueve la ficha: si en su sitio taparía alguna vivienda
+// de la planta abierta, salta arriba. Es lo mismo que hace cualquier
+// popover cuando no cabe: cambiar de lado.
+function colocarPanelSinTapar() {
+  const crujias = [...document.querySelectorAll('.planta-zone.popped .unit-slice')];
+  if (!crujias.length) { contextPanel.classList.remove('arriba'); return; }
+
+  // Lo que decide si una vivienda se puede pulsar no es que la ficha
+  // roce su rectángulo, sino que le tape el CENTRO, que es donde va el
+  // dedo o el cursor. Con un margen de 6px para no dejarlo al filo.
+  const tapadas = () => {
+    const p = contextPanel.getBoundingClientRect();
+    const m = 6;
+    return crujias.filter((s) => {
+      const r = s.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      return cx > p.left - m && cx < p.right + m && cy > p.top - m && cy < p.bottom + m;
+    }).length;
+  };
+
+  // Se prueban las dos posiciones y se elige la que tapa menos. Abajo
+  // es la de siempre, así que gana en caso de empate.
+  contextPanel.classList.remove('arriba');
+  const abajo = tapadas();
+  if (abajo === 0) return;
+
+  contextPanel.classList.add('arriba');
+  if (tapadas() >= abajo) contextPanel.classList.remove('arriba');
+}
+
 function showContextPanel() {
   contextPanel.classList.add('open');
   contextPanel.setAttribute('aria-hidden', 'false');
+  colocarPanelSinTapar();
 }
 
 // Solo oculta el panel -- no toca el estado de la planta desplegada
 // en el edificio (la usa collapsePopped en building.js para no
 // recursar sobre closePanel).
 function hideContextPanel() {
-  contextPanel.classList.remove('open');
+  contextPanel.classList.remove('open', 'arriba');
   contextPanel.setAttribute('aria-hidden', 'true');
 }
+
+// Al girar el móvil o redimensionar cambia qué tapa a qué.
+window.addEventListener('resize', () => {
+  if (contextPanel.classList.contains('open')) colocarPanelSinTapar();
+});
 
 function openFloorSummary(planta) {
   currentViewedUnitId = null;
