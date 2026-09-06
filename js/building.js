@@ -327,8 +327,28 @@ let viewZoom = 1;
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 2.2;
 
+// Desplazamiento que aplica el panel de ficha para no taparse con el
+// edificio. Los hotspots son hijos de #fachada-wrap, así que se mueven
+// con la imagen y el clic sigue cayendo donde toca.
+let panelOffset = { x: 0, y: 0, scale: 1 };
+
+function applyFachadaTransform() {
+  const s = viewZoom * panelOffset.scale;
+  const mueve = panelOffset.x !== 0 || panelOffset.y !== 0;
+  const partes = [];
+  if (mueve) partes.push(`translate(${panelOffset.x}px, ${panelOffset.y}px)`);
+  if (s !== 1) partes.push(`scale(${s})`);
+  fachadaWrap.style.transform = partes.join(' ');
+}
+
 function applyViewZoom() {
-  fachadaWrap.style.transform = viewZoom === 1 ? '' : `scale(${viewZoom})`;
+  applyFachadaTransform();
+}
+
+// La llama unit-panel.js al abrir/cerrar la ficha.
+function setFachadaPanelOffset(off) {
+  panelOffset = Object.assign({ x: 0, y: 0, scale: 1 }, off || {});
+  applyFachadaTransform();
 }
 
 document.getElementById('view-zoom-in').addEventListener('click', () => {

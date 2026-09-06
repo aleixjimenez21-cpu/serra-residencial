@@ -1262,26 +1262,46 @@ img, video { display: block; max-width: 100%; }
    antiguo panel lateral ancho para la selección de planta/vivienda:
    solo aparece con algo que mostrar, nunca ocupa media pantalla.
    ============================================================= */
+/* Panel lateral fijo, NO un modal centrado. Antes iba abajo en el
+   centro y tapaba las viviendas de la planta baja: dos de las cuatro
+   crujías quedaban debajo y no se podían pulsar. Ahora se ancla a la
+   izquierda (a la derecha del riel de menú) y el edificio se reencuadra
+   para seguir entero y clicable -- ver setFachadaPanelOffset(). */
 .context-panel {
   position: fixed;
-  left: 50%;
-  bottom: clamp(1.1rem, 4vw, 1.8rem);
-  transform: translate(-50%, 0);
+  left: 76px;
+  top: 50%;
   z-index: 32;
-  min-width: 240px;
-  max-width: min(380px, 92vw);
+  width: 340px;
+  max-height: min(78vh, 660px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   background: var(--glass-dark);
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
   border: 1px solid var(--hairline);
-  border-radius: 12px;
-  padding: 1.1rem 1.3rem 1.2rem;
+  border-radius: 14px;
+  padding: 1.2rem 1.35rem 1.3rem;
   color: var(--cream);
   opacity: 0;
   pointer-events: none;
-  transition: opacity .3s var(--ease), transform .3s var(--ease);
+  transform: translateY(-50%) translateX(-14px);
+  transition: opacity .26s var(--ease), transform .26s var(--ease);
 }
-.context-panel.open { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+.context-panel::-webkit-scrollbar { display: none; }
+.context-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+/* El contenido se cambia con un fundido corto al saltar de una
+   vivienda a otra: el panel no se cierra ni parpadea. */
+#context-panel-body { transition: opacity .18s var(--ease); }
+#context-panel-body.swapping { opacity: 0; }
+
+/* Asa de arrastre: solo tiene sentido en el bottom-sheet de móvil. */
+.context-panel-grab { display: none; }
 .context-panel-close {
   position: absolute;
   top: 0.6rem; right: 0.7rem;
@@ -1775,7 +1795,30 @@ img, video { display: block; max-width: 100%; }
   }
   .side-drawer.open { transform: translateY(0); }
   .zone-label { font-size: 0.62rem; }
-  .context-panel { width: calc(100vw - 2rem); max-width: none; }
+  /* Bottom-sheet: pegado abajo, ancho completo y arrastrable. */
+  .context-panel {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 62vh;
+    border-radius: 16px 16px 0 0;
+    border-bottom: none;
+    padding: 0.5rem 1.15rem calc(1.1rem + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    touch-action: pan-y;
+  }
+  .context-panel.open { transform: translateY(0); }
+  .context-panel-grab {
+    display: block;
+    width: 38px;
+    height: 4px;
+    margin: 0 auto 0.75rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.28);
+  }
+  .context-panel-close { top: 0.55rem; right: 0.8rem; }
 
   /* El resto de overlays nuevos siguen el mismo criterio que
      .side-drawer en móvil: pantalla completa / bottom-sheet, nunca
@@ -1802,7 +1845,15 @@ img, video { display: block; max-width: 100%; }
    lateral no cabe y los paneles se comen la pantalla.
    ============================================================= */
 @media (max-height: 540px) {
-  .context-panel { padding: 0.8rem 1rem 0.9rem; max-width: min(330px, 74vw); }
+  /* Móvil apaisado: hay más ancho que alto, así que el panel sigue
+     siendo lateral (un bottom-sheet se comería la pantalla), pero más
+     estrecho y pegado al riel de menú. */
+  .context-panel {
+    width: 268px;
+    left: 62px;
+    max-height: calc(100dvh - 1.2rem);
+    padding: 0.85rem 1rem 0.95rem;
+  }
   .ctx-price { font-size: 1.15rem; margin-bottom: 0.6rem; }
   .ctx-summary, .ctx-specs { margin-bottom: 0.5rem; }
   .ctx-btn { padding: 0.45em 0.85em; font-size: 0.68rem; }
