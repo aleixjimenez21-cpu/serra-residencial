@@ -1289,6 +1289,10 @@ img, video { display: block; max-width: 100%; }
   bottom: auto;
   top: clamp(4.4rem, 10vh, 5.8rem);
 }
+
+/* La barra de una línea es exclusiva de móvil: en escritorio hay sitio
+   de sobra para la tarjeta completa. */
+.ctx-bar { display: none; }
 .context-panel-close {
   position: absolute;
   top: 0.6rem; right: 0.7rem;
@@ -1812,10 +1816,17 @@ img, video { display: block; max-width: 100%; }
   /* Con 390px de alto, cada píxel de alto de la ficha es una franja de
      edificio tapada: aquí va lo más compacta posible, para que el
      salto arriba/abajo tenga banda libre donde caber. */
-  .context-panel { padding: 0.7rem 0.95rem 0.8rem; max-width: min(330px, 74vw); }
-  /* Arriba, pegada al borde: con tan poco alto, cada píxel que baje la
-     ficha es una planta que deja de poder pulsarse. */
-  .context-panel.arriba { top: 3.1rem; }
+  .ctx-eyebrow { margin-bottom: 0.25rem; font-size: 0.6rem; }
+  .ctx-specs { font-size: 0.92rem; }
+  .ctx-specs-sub { font-size: 0.68rem; margin: 0.1rem 0 0.4rem; }
+  .ctx-price { font-size: 1.02rem; margin-bottom: 0.45rem; }
+  .ctx-btn { padding: 0.38em 0.72em; font-size: 0.63rem; }
+  .ctx-actions { gap: 0.35rem; }
+  .ctx-amenities { font-size: 0.7rem; line-height: 1.5; }
+
+  /* El texto del widget del asistente lo ensancha hasta meterse sobre
+     la fachada, y tapaba la vivienda de la derecha. Solo el círculo. */
+  .ai-widget-text { display: none; }
   .ctx-eyebrow { margin-bottom: 0.25rem; font-size: 0.6rem; }
   .ctx-specs { font-size: 0.92rem; }
   .ctx-specs-sub { font-size: 0.68rem; margin: 0.1rem 0 0.4rem; }
@@ -1981,4 +1992,75 @@ img, video { display: block; max-width: 100%; }
   /* Sin hover que la muestre, la etiqueta de la vivienda elegida se
      queda visible: es la que dice cuál has tocado. */
   .unit-slice.selected .slice-label { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* =============================================================
+   FICHA EN MÓVIL — barra de una línea, no tarjeta
+   -------------------------------------------------------------
+   Con ~390px de alto y el edificio a pantalla completa, una tarjeta
+   de 150px tapa una planta entera se ponga donde se ponga: moverla
+   arriba o abajo solo cambia a cuál. Así que en móvil la ficha entra
+   como una barra pegada al borde inferior, sobre la parte baja del
+   render donde no hay nada que pulsar, y muestra ya lo esencial
+   (vivienda, dormitorios, superficie y precio). El detalle y los
+   botones se despliegan al tocarla, que es una decisión del usuario.
+   ============================================================= */
+@media (max-height: 540px), (max-width: 720px) {
+  .context-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto !important;      /* anula el salto arriba/abajo */
+    width: auto;
+    max-width: none;
+    padding: 0;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    transform: translateY(6px);
+    max-height: 82vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .context-panel.open { transform: translateY(0); }
+
+  .ctx-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    min-height: 46px;
+    padding: 0.55rem calc(1rem + env(safe-area-inset-right)) 0.55rem 1rem;
+    background: none;
+    border: none;
+    color: var(--cream);
+    font-family: inherit;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
+    text-align: left;
+    cursor: pointer;
+  }
+  .ctx-bar-texto { flex: 1; min-width: 0; }
+  .ctx-bar b { font-weight: 600; color: #fff; }
+  .ctx-bar-flecha {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-right: 1.5px solid rgba(255,255,255,0.7);
+    border-top: 1.5px solid rgba(255,255,255,0.7);
+    transform: rotate(-45deg);          /* apunta arriba: "despliega" */
+    transition: transform .25s var(--ease);
+  }
+  .context-panel.expandida .ctx-bar-flecha { transform: rotate(135deg); }
+
+  /* El detalle solo aparece cuando el usuario lo pide. */
+  .ctx-detalle {
+    display: none;
+    padding: 0 1rem calc(1rem + env(safe-area-inset-bottom));
+  }
+  .context-panel.expandida .ctx-detalle { display: block; }
+
+  /* La ✕ sobra mientras es una barra: se cierra desde el edificio o
+     plegándola. Aparece al desplegar. */
+  .context-panel-close { display: none; }
+  .context-panel.expandida .context-panel-close { display: block; top: 0.5rem; right: 0.7rem; }
 }

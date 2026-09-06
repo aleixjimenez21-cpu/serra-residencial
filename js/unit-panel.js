@@ -20,7 +20,13 @@ let currentViewedUnitId = null;
 // edificio, se mueve la ficha: si en su sitio taparía alguna vivienda
 // de la planta abierta, salta arriba. Es lo mismo que hace cualquier
 // popover cuando no cabe: cambiar de lado.
+const fichaEsBarra = () => window.matchMedia('(max-height: 540px), (max-width: 720px)').matches;
+
 function colocarPanelSinTapar() {
+  // En móvil la ficha es una barra pegada al borde inferior: no tapa
+  // ninguna planta, así que no hay nada que esquivar.
+  if (fichaEsBarra()) { contextPanel.classList.remove('arriba'); return; }
+
   const crujias = [...document.querySelectorAll('.planta-zone.popped .unit-slice')];
   if (!crujias.length) { contextPanel.classList.remove('arriba'); return; }
 
@@ -58,7 +64,7 @@ function showContextPanel() {
 // en el edificio (la usa collapsePopped en building.js para no
 // recursar sobre closePanel).
 function hideContextPanel() {
-  contextPanel.classList.remove('open', 'arriba');
+  contextPanel.classList.remove('open', 'arriba', 'expandida');
   contextPanel.setAttribute('aria-hidden', 'true');
 }
 
@@ -67,18 +73,37 @@ window.addEventListener('resize', () => {
   if (contextPanel.classList.contains('open')) colocarPanelSinTapar();
 });
 
+// En móvil la ficha entra como una barra de una línea pegada al borde
+// inferior: con la pantalla tan baja, cualquier tarjeta se come una
+// planta entera, se ponga donde se ponga. La barra deja el edificio
+// libre y muestra ya lo esencial; el detalle se despliega al tocarla.
+// En escritorio la barra está oculta y se ve la tarjeta de siempre.
+function renderPanel(barra, detalle) {
+  contextPanelBody.innerHTML = `
+    <button type="button" class="ctx-bar" id="ctx-bar" aria-expanded="false">
+      <span class="ctx-bar-texto">${barra}</span>
+      <span class="ctx-bar-flecha" aria-hidden="true"></span>
+    </button>
+    <div class="ctx-detalle">${detalle}</div>
+  `;
+  const bar = contextPanelBody.querySelector('#ctx-bar');
+  bar.addEventListener('click', () => {
+    const abierta = contextPanel.classList.toggle('expandida');
+    bar.setAttribute('aria-expanded', String(abierta));
+  });
+}
+
 function openFloorSummary(planta) {
   currentViewedUnitId = null;
   const disponibles = planta.units.filter((u) => u.estado === 'disponible').length;
-  contextPanelBody.innerHTML = `
-    <span class="ctx-eyebrow">${planta.label}</span>
-    <p class="ctx-summary">${planta.units.length} vivienda${planta.units.length === 1 ? '' : 's'} · ${disponibles} disponible${disponibles === 1 ? '' : 's'}</p>
-    <div class="ctx-actions">
-      <button type="button" class="ctx-btn ctx-btn--primary" id="ctx-explore-floor">Explorar planta →</button>
-    </div>
-  `;
+  const resumen = `${planta.units.length} vivienda${planta.units.length === 1 ? '' : 's'} · ${disponibles} disponible${disponibles === 1 ? '' : 's'}`;
+  renderPanel(
+    `<b>${planta.label}</b> · ${resumen}`,
+    `<span class="ctx-eyebrow">${planta.label}</span>
+     <p class="ctx-summary">${resumen}</p>
+     <p class="ctx-specs-sub">Elige una vivienda sobre el edificio.</p>`
+  );
   showContextPanel();
-  contextPanelBody.querySelector('#ctx-explore-floor').addEventListener('click', hideContextPanel);
 }
 
 // letraSeleccionada ausente -> resumen de planta (nivel 2). Con letra
@@ -90,17 +115,18 @@ function openPanel(planta, letraSeleccionada) {
   currentViewedUnitId = `${planta.id}-${u.letra}`;
   const compared = typeof isInCompare === 'function' && isInCompare(currentViewedUnitId);
 
-  contextPanelBody.innerHTML = `
-    <span class="ctx-eyebrow">${plantaBadge(planta)} ${u.letra} ${estadoDotHTML(u.estado)}</span>
-    <p class="ctx-specs">${u.tipologia} · ${u.m2} m²</p>
-    <p class="ctx-specs-sub">Terraza ${u.terraza_m2} m² · Orientación ${u.orientacion}</p>
-    <p class="ctx-price">${u.precio}</p>
-    <div class="ctx-actions">
-      <button type="button" class="ctx-btn ctx-btn--primary" id="ctx-360">Ver en 360°</button>
-      <button type="button" class="ctx-btn" id="ctx-compare">${compared ? '− Quitar de comparar' : '+ Comparar'}</button>
-      <button type="button" class="ctx-btn" id="ctx-request">Solicitar información</button>
-    </div>
-  `;
+  renderPanel(
+    `<b>${plantaBadge(planta)} ${u.letra}</b> · ${u.dorm} dorm. · ${u.m2} m² · <b>${u.precio}</b>`,
+    `<span class="ctx-eyebrow">${plantaBadge(planta)} ${u.letra} ${estadoDotHTML(u.estado)}</span>
+     <p class="ctx-specs">${u.tipologia} · ${u.m2} m²</p>
+     <p class="ctx-specs-sub">Terraza ${u.terraza_m2} m² · Orientación ${u.orientacion}</p>
+     <p class="ctx-price">${u.precio}</p>
+     <div class="ctx-actions">
+       <button type="button" class="ctx-btn ctx-btn--primary" id="ctx-360">Ver en 360°</button>
+       <button type="button" class="ctx-btn" id="ctx-compare">${compared ? '− Quitar de comparar' : '+ Comparar'}</button>
+       <button type="button" class="ctx-btn" id="ctx-request">Solicitar información</button>
+     </div>`
+  );
   showContextPanel();
 
   // El interior es un tour aparte (web/showroom/). Necesita http://,
@@ -124,13 +150,14 @@ function estadoDotHTML(estado) {
 
 function openRooftopPanel() {
   currentViewedUnitId = null;
-  contextPanelBody.innerHTML = `
-    <span class="ctx-eyebrow">${ROOFTOP.label}</span>
-    <p class="ctx-summary">Zona común, sin viviendas.</p>
-    <ul class="ctx-amenities">
-      ${ROOFTOP.amenities.map((a) => `<li>${a}</li>`).join('')}
-    </ul>
-  `;
+  renderPanel(
+    `<b>${ROOFTOP.label}</b> · Zona común`,
+    `<span class="ctx-eyebrow">${ROOFTOP.label}</span>
+     <p class="ctx-summary">Zona común, sin viviendas.</p>
+     <ul class="ctx-amenities">
+       ${ROOFTOP.amenities.map((a) => `<li>${a}</li>`).join('')}
+     </ul>`
+  );
   showContextPanel();
 }
 
