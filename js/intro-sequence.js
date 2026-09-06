@@ -16,7 +16,6 @@ const fachadaFadeImg     = document.getElementById('fachada-fade-img');
 const frenteVideoScreen  = document.getElementById('frente-video-screen');
 const frenteVideo        = document.getElementById('frente-video');
 const btnSkipFrente      = document.getElementById('btn-skip-frente');
-const siteNav            = document.getElementById('site-nav');
 const mainContent        = document.getElementById('main-content');
 
 // En PC: descenso.mp4 (horizontal), tal cual estaba.
@@ -104,7 +103,6 @@ function revealFachadaBackdrop() {
 
   setTimeout(() => {
     descensoScreen.classList.add('hidden');
-    siteNav.classList.remove('hidden');
 
     // Liberamos el vídeo 1 (ya reproducido) y empezamos a precargar el
     // vídeo 2 ya, mientras el usuario lee los popups.

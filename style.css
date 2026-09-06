@@ -318,49 +318,67 @@ img, video { display: block; max-width: 100%; }
    expande un poco al pasar el cursor; el icono superior fija el
    panel completo abierto. Cristal oscuro muy sutil, sin tinte marrón.
    ============================================================= */
+/* Menú anclado arriba a la izquierda: botón "☰ Menú" que despliega el
+   listado debajo. Mismo comportamiento en móvil y escritorio -- un riel
+   de nueve iconos sin etiqueta no se entiende en ninguno de los dos. */
 .app-sidebar {
   position: fixed;
-  top: 50%;
+  top: clamp(0.9rem, 2.4vw, 1.4rem);
   left: clamp(0.9rem, 2.4vw, 1.4rem);
-  transform: translateY(-50%);
-  z-index: 29;
-  width: 50px;
+  z-index: 33;
+  width: auto;
   background: var(--glass-dark);
   backdrop-filter: blur(14px) saturate(1.1);
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
   border: 1px solid var(--hairline);
-  border-radius: 25px;
-  padding: 0.6rem 0;
+  border-radius: 999px;
+  padding: 0;
+  overflow: hidden;
   opacity: 0;
-  transition: opacity .6s var(--ease), width .35s var(--ease), border-radius .35s var(--ease);
+  transition: opacity .6s var(--ease), border-radius .3s var(--ease), width .3s var(--ease);
 }
 .app-sidebar:not(.hidden) { opacity: 1; }
 .app-sidebar.hidden { pointer-events: none; }
-.app-sidebar.expanded { width: 176px; border-radius: 14px; }
+/* Desplegado: deja de ser píldora y pasa a panel con el listado. */
+.app-sidebar.expanded {
+  width: 248px;
+  border-radius: 16px;
+  padding-bottom: 0.5rem;
+  max-height: calc(100dvh - 2.4rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.app-sidebar.expanded::-webkit-scrollbar { display: none; }
 
 .sidebar-toggle {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.55rem;
   width: 100%;
-  height: 34px;
-  margin-bottom: 0.3rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--hairline);
+  padding: 0.72rem 1.05rem;
   background: none;
-  border-left: none; border-right: none; border-top: none;
+  border: none;
   cursor: pointer;
   color: var(--cream);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
 }
-.sidebar-toggle svg { width: 15px; height: 15px; }
+.sidebar-toggle svg { width: 17px; height: 17px; flex: none; }
 .sidebar-toggle:hover { color: var(--gold); }
-.sidebar-toggle { position: relative; }
+.sidebar-toggle-texto { white-space: nowrap; }
+.app-sidebar.expanded .sidebar-toggle {
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 0.35rem;
+}
 
 /* Contador de viviendas guardadas para comparar. */
 .sidebar-badge {
   position: absolute;
-  top: -2px;
-  right: 6px;
+  top: 6px;
+  left: 26px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -393,7 +411,9 @@ img, video { display: block; max-width: 100%; }
 }
 .app-sidebar:not(.expanded) .sidebar-badge--item { display: none; }
 
-.sidebar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* Plegado solo se ve la píldora "Menú": el listado aparece al abrirlo. */
+.sidebar-list { list-style: none; margin: 0; padding: 0; display: none; flex-direction: column; }
+.app-sidebar.expanded .sidebar-list { display: flex; }
 .sidebar-item {
   display: flex;
   align-items: center;
@@ -413,36 +433,12 @@ img, video { display: block; max-width: 100%; }
 .sidebar-item:hover, .sidebar-item.active { color: var(--white); }
 .sidebar-item.active .sidebar-icon { color: var(--gold); }
 .sidebar-item { position: relative; }
+/* Dentro del panel las etiquetas se ven siempre: es lo que hace que el
+   menú se entienda sin tener que adivinar los iconos. */
 .sidebar-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  max-width: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-width .3s var(--ease), opacity .2s var(--ease);
-}
-.app-sidebar.expanded .sidebar-label { max-width: 140px; opacity: 1; }
-/* Riel colapsado: al pasar el cursor por un punto, su etiqueta se
-   despliega como una pequeña bandera junto al icono (sin ensanchar
-   todo el riel). Es el "expandirse suavemente" pedido. */
-.app-sidebar:not(.expanded) .sidebar-item:hover .sidebar-label,
-.app-sidebar:not(.expanded) .sidebar-item:focus-visible .sidebar-label {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 10px;
-  max-width: 160px;
-  opacity: 1;
-  background: var(--glass-dark);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--hairline);
-  color: var(--white);
-  padding: 0.45em 0.75em;
-  border-radius: 6px;
-  pointer-events: none;
 }
 .sidebar-footer {
   max-height: 0;
@@ -1262,14 +1258,20 @@ img, video { display: block; max-width: 100%; }
    antiguo panel lateral ancho para la selección de planta/vivienda:
    solo aparece con algo que mostrar, nunca ocupa media pantalla.
    ============================================================= */
+/* Ficha como panel lateral fijo, bajo el botón de menú. Tapa parte del
+   render a propósito: es lo que se pidió. */
 .context-panel {
   position: fixed;
-  left: 50%;
-  bottom: clamp(1.1rem, 4vw, 1.8rem);
-  transform: translate(-50%, 0);
+  left: clamp(0.9rem, 2.4vw, 1.4rem);
+  top: 5.9rem;                 /* justo debajo de la píldora del menú */
+  transform: translateX(-10px);
   z-index: 32;
-  min-width: 240px;
-  max-width: min(380px, 92vw);
+  width: 320px;
+  max-width: calc(100vw - 1.8rem);
+  max-height: calc(100dvh - 7.4rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   background: var(--glass-dark);
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
@@ -1281,18 +1283,75 @@ img, video { display: block; max-width: 100%; }
   pointer-events: none;
   transition: opacity .3s var(--ease), transform .3s var(--ease);
 }
-.context-panel.open { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
-/* Posición alternativa cuando abajo taparía las viviendas de la planta
-   abierta (ver colocarPanelSinTapar en unit-panel.js). Arriba solo hay
-   cielo en el render: no se pisa nada clicable. */
-.context-panel.arriba {
-  bottom: auto;
-  top: clamp(4.4rem, 10vh, 5.8rem);
-}
+.context-panel::-webkit-scrollbar { display: none; }
+.context-panel.open { opacity: 1; pointer-events: auto; transform: translateX(0); }
 
-/* La barra de una línea es exclusiva de móvil: en escritorio hay sitio
-   de sobra para la tarjeta completa. */
-.ctx-bar { display: none; }
+/* --- Contenido de la ficha --- */
+.ctx-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding-right: 1.6rem;   /* deja sitio a la ✕ */
+}
+.ctx-titulo {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.ctx-estado {
+  flex: none;
+  padding: 0.28em 0.7em;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ctx-estado--disponible { background: rgba(143,174,124,0.22); color: #b9d6a5; }
+.ctx-estado--reservado  { background: rgba(212,162,76,0.22);  color: #e2bd7c; }
+.ctx-estado--vendido    { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.65); }
+.ctx-estado--comun      { background: rgba(214,197,164,0.18); color: var(--gold); }
+
+/* Botón principal a todo el ancho, como en la referencia. */
+.ctx-cta {
+  display: block;
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 0.8em 1em;
+  border: none;
+  border-radius: 10px;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter .2s var(--ease);
+}
+.ctx-cta:hover { filter: brightness(1.08); }
+
+/* Tabla de datos: etiqueta a la izquierda, valor a la derecha. */
+.ctx-datos { margin-bottom: 1rem; }
+.ctx-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(255,255,255,0.09);
+  font-size: 0.8rem;
+}
+.ctx-fila:last-child { border-bottom: 1px solid rgba(255,255,255,0.09); }
+.ctx-fila span { color: rgba(255,255,255,0.6); }
+.ctx-fila b { font-weight: 500; color: #fff; }
+.ctx-pie { margin: 0; font-size: 0.74rem; color: rgba(255,255,255,0.55); line-height: 1.5; }
 .context-panel-close {
   position: absolute;
   top: 0.6rem; right: 0.7rem;
@@ -1786,7 +1845,6 @@ img, video { display: block; max-width: 100%; }
   }
   .side-drawer.open { transform: translateY(0); }
   .zone-label { font-size: 0.62rem; }
-  .context-panel { width: calc(100vw - 2rem); max-width: none; }
 
   /* El resto de overlays nuevos siguen el mismo criterio que
      .side-drawer en móvil: pantalla completa / bottom-sheet, nunca
@@ -1856,77 +1914,6 @@ img, video { display: block; max-width: 100%; }
 }
 
 /* =============================================================
-   MENÚ EN MÓVIL — un riel con nueve iconos sin etiqueta no funciona
-   en una pantalla pequeña: ni se sabe qué hace cada uno ni hay sitio.
-   Cerrado se reduce a UN botón; abierto es un panel con nombres,
-   que es lo legible y lo que se espera en un móvil.
-   ============================================================= */
-@media (max-height: 540px), (max-width: 720px) {
-  .app-sidebar {
-    top: auto;
-    bottom: max(0.8rem, env(safe-area-inset-bottom));
-    left: 0.8rem;
-    transform: none;
-    width: 46px;
-    height: 46px;
-    padding: 0;
-    border-radius: 50%;
-    overflow: hidden;
-    transition: width .32s var(--ease), height .32s var(--ease),
-                border-radius .32s var(--ease), opacity .6s var(--ease);
-  }
-  .sidebar-toggle {
-    height: 46px;
-    margin: 0;
-    padding: 0;
-    border-bottom: none;
-  }
-  .sidebar-toggle svg { width: 17px; height: 17px; }
-  .sidebar-list, .sidebar-footer, .sidebar-restart-tutorial { display: none; }
-
-  /* Abierto: panel de altura completa pegado al borde izquierdo. */
-  .app-sidebar.expanded {
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: min(76vw, 272px);
-    height: auto;
-    border-radius: 0 16px 16px 0;
-    overflow-y: auto;
-    padding: max(0.8rem, env(safe-area-inset-top)) 0 1rem;
-    scrollbar-width: none;
-  }
-  .app-sidebar.expanded::-webkit-scrollbar { display: none; }
-  .app-sidebar.expanded .sidebar-toggle {
-    justify-content: flex-start;
-    height: auto;
-    padding: 0 1.15rem 0.8rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--hairline);
-  }
-  .app-sidebar.expanded .sidebar-list { display: flex; }
-  .app-sidebar.expanded .sidebar-footer,
-  .app-sidebar.expanded .sidebar-restart-tutorial { display: block; }
-  .app-sidebar.expanded .sidebar-item { height: 46px; padding-left: 1.15rem; }
-  .app-sidebar.expanded .sidebar-label {
-    max-width: 190px;
-    opacity: 1;
-    font-size: 0.84rem;
-    letter-spacing: 0.02em;
-  }
-  /* Velo para despegar el panel de la escena. No captura toques: de
-     cerrar al tocar fuera se encarga nav-shell.js. */
-  .app-sidebar.expanded::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background: rgba(10, 9, 7, 0.55);
-    pointer-events: none;
-  }
-}
-
-/* =============================================================
    TÁCTIL — objetivos más grandes donde no hay ratón. Nada de esto
    afecta al escritorio.
    ============================================================= */
@@ -1958,7 +1945,6 @@ img, video { display: block; max-width: 100%; }
   .view-btn svg { width: 14px; height: 14px; }
 
   /* El panel de planta/vivienda sube lo justo para no pisarlos. */
-  .context-panel { bottom: 3.1rem; }
 
   /* Con los controles ya en el centro, el rótulo baja a la altura del
      botón de menú, que es su fila natural. */
@@ -1994,73 +1980,3 @@ img, video { display: block; max-width: 100%; }
   .unit-slice.selected .slice-label { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
-/* =============================================================
-   FICHA EN MÓVIL — barra de una línea, no tarjeta
-   -------------------------------------------------------------
-   Con ~390px de alto y el edificio a pantalla completa, una tarjeta
-   de 150px tapa una planta entera se ponga donde se ponga: moverla
-   arriba o abajo solo cambia a cuál. Así que en móvil la ficha entra
-   como una barra pegada al borde inferior, sobre la parte baja del
-   render donde no hay nada que pulsar, y muestra ya lo esencial
-   (vivienda, dormitorios, superficie y precio). El detalle y los
-   botones se despliegan al tocarla, que es una decisión del usuario.
-   ============================================================= */
-@media (max-height: 540px), (max-width: 720px) {
-  .context-panel {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: auto !important;      /* anula el salto arriba/abajo */
-    width: auto;
-    max-width: none;
-    padding: 0;
-    border-radius: 14px 14px 0 0;
-    border-bottom: none;
-    transform: translateY(6px);
-    max-height: 82vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  .context-panel.open { transform: translateY(0); }
-
-  .ctx-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    width: 100%;
-    min-height: 46px;
-    padding: 0.55rem calc(1rem + env(safe-area-inset-right)) 0.55rem 1rem;
-    background: none;
-    border: none;
-    color: var(--cream);
-    font-family: inherit;
-    font-size: 0.78rem;
-    letter-spacing: 0.01em;
-    text-align: left;
-    cursor: pointer;
-  }
-  .ctx-bar-texto { flex: 1; min-width: 0; }
-  .ctx-bar b { font-weight: 600; color: #fff; }
-  .ctx-bar-flecha {
-    flex: none;
-    width: 9px;
-    height: 9px;
-    border-right: 1.5px solid rgba(255,255,255,0.7);
-    border-top: 1.5px solid rgba(255,255,255,0.7);
-    transform: rotate(-45deg);          /* apunta arriba: "despliega" */
-    transition: transform .25s var(--ease);
-  }
-  .context-panel.expandida .ctx-bar-flecha { transform: rotate(135deg); }
-
-  /* El detalle solo aparece cuando el usuario lo pide. */
-  .ctx-detalle {
-    display: none;
-    padding: 0 1rem calc(1rem + env(safe-area-inset-bottom));
-  }
-  .context-panel.expandida .ctx-detalle { display: block; }
-
-  /* La ✕ sobra mientras es una barra: se cierra desde el edificio o
-     plegándola. Aparece al desplegar. */
-  .context-panel-close { display: none; }
-  .context-panel.expandida .context-panel-close { display: block; top: 0.5rem; right: 0.7rem; }
-}

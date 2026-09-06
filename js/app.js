@@ -34,7 +34,6 @@ function finishLoading() {
 function entrarDirectoAlEdificio() {
   finishLoading();
   introScreen.classList.add('hidden');
-  siteNav.classList.remove('hidden');
 
   // Ninguno de los vídeos se va a usar: se liberan para no gastar
   // datos ni memoria descargándolos de fondo.
