@@ -62,23 +62,19 @@ function openPanel(planta, letraSeleccionada) {
   currentViewedUnitId = `${planta.id}-${u.letra}`;
   const compared = typeof isInCompare === 'function' && isInCompare(currentViewedUnitId);
 
+  const icono = (d) => `<svg class="ctx-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   contextPanelBody.innerHTML = `
-    <div class="ctx-cabecera">
-      <p class="ctx-titulo">Vivienda ${plantaBadge(planta)} ${u.letra}</p>
-      <span class="ctx-estado ctx-estado--${u.estado}">${ESTADO_LABEL[u.estado]}</span>
-    </div>
+    <span class="ctx-estado ctx-estado--${u.estado}">${ESTADO_LABEL[u.estado]}</span>
+    <p class="ctx-titulo">Vivienda ${plantaBadge(planta)} ${u.letra}</p>
+    <p class="ctx-resumen">
+      <span>${icono('<path d="M4 8V5h16v3M4 16v3h16v-3M7 12h10"/>')}${u.m2} m²</span>
+      <span>${icono('<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>')}${u.dorm} ${u.dorm === 1 ? 'Dormitorio' : 'Dormitorios'}</span>
+      <span>${icono('<path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M7 12V6a2 2 0 0 1 4 0"/>')}${u.banos} ${u.banos === 1 ? 'Baño' : 'Baños'}</span>
+    </p>
     <p class="ctx-price">${u.precio}</p>
     <button type="button" class="ctx-cta" id="ctx-request">Solicitar información</button>
-    <div class="ctx-datos">
-      ${filaDato('Superficie total', `${u.m2} m²`)}
-      ${filaDato('Dormitorios', u.dorm)}
-      ${filaDato('Baños', u.banos)}
-      ${filaDato('Terraza', `${u.terraza_m2} m²`)}
-      ${filaDato('Orientación', u.orientacion)}
-      ${filaDato('Planta', planta.label)}
-    </div>
     <div class="ctx-actions">
-      <button type="button" class="ctx-btn ctx-btn--primary" id="ctx-360">Tour 360°</button>
+      <button type="button" class="ctx-btn" id="ctx-360">Ver tour 360°</button>
       <button type="button" class="ctx-btn" id="ctx-compare">${compared ? 'Quitar' : 'Comparar'}</button>
     </div>
   `;
